@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5",
+    "mongoose": "^8.7.2",
+    "wokcommands": "^2.1.9"
+  }
+}
