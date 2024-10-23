@@ -52,6 +52,7 @@ const schema = new Schema({
     default: () => ({}),
   },
   category: String,
+  announcementChannelId: { type: String, required: false },
 });
 
 module.exports = model("Guilds", schema);
