@@ -305,7 +305,7 @@ async function handleCreateGiveaway(interaction) {
       required: true,
     },
     {
-      label: "Duration Time of raffle",
+      label: "Duration Time of raffle ( 2 hours, 10 days)",
       customId: "duration_time",
       placeholder: "Enter time duration for giveaway",
       style: "Short",
@@ -358,23 +358,36 @@ async function joinGiveaway(interaction, id) {
     });
   }
 
-  // Check if user has sufficient points
-  if (user.hyperBlockPoints < giveaway.entryCost) {
+  const serverMembership = user.serverMemberships.find(
+    (membership) => membership.guildId === interaction.guildId
+  );
+
+  if (!serverMembership) {
     return await interaction.reply({
-      content: "Insufficient points to enter the giveaway.",
+      content: "You are not a member of this server or missing required data.",
+      ephemeral: true,
+    });
+  }
+  if (!serverMembership || serverMembership.points < giveaway.entryCost) {
+    return await interaction.reply({
+      content: "Insufficient points in this server to enter the giveaway.",
       ephemeral: true,
     });
   }
 
-  // Check for required role if specified
-  // if (giveaway.roleRequired && !userHasRole(user, giveaway.roleRequired)) {
-  //   return await interaction.reply({
-  //     content: "You don't have the required role to join this giveaway.",
-  //     ephemeral: true,
-  //   });
-  // }
+  // Check if the user is a member of the server
 
-  // Check if entries are limited and if the limit has been reached
+  if (giveaway.roleRequired) {
+    const requiredRoleId = giveaway.roleRequired;
+    const member = interaction.guild.members.cache.get(interaction.user.id);
+    if (!member.roles.cache.has(requiredRoleId)) {
+      return await interaction.reply({
+        content: "You don't have the required role to join this giveaway.",
+        ephemeral: true,
+      });
+    }
+  }
+
   if (
     giveaway.entriesLimited &&
     giveaway.totalParticipants >= giveaway.entriesLimited
@@ -397,7 +410,7 @@ async function joinGiveaway(interaction, id) {
   }
 
   // Deduct entry points from user and save
-  user.hyperBlockPoints -= giveaway.entryCost;
+  serverMembership.points -= giveaway.entryCost;
   await user.save();
 
   // Add user to giveaway participants and increment the count
@@ -443,6 +456,39 @@ async function handleEditGiveaway(interaction) {
     giveawayOptions
   );
 }
+
+async function handleDeleteGiveaway(interaction) {
+  const guildGiveaways = await Giveaway.find({ guildId: interaction.guildId });
+  if (!guildGiveaways.length) {
+    return await interaction.reply({
+      content: "🎉 No active giveaways at the moment!",
+      ephemeral: true,
+    });
+  }
+
+  const giveawayOptions = guildGiveaways.map((giveaway) => ({
+    label: `${giveaway.raffleTitle} (${giveaway.entryCost} coins)`,
+    description:
+      giveaway.description?.slice(0, 100) ||
+      `Ends on ${giveaway.endTime.toLocaleDateString()}`,
+    value: giveaway._id.toString(),
+    emoji: "🎟️",
+  }));
+
+  const content =
+    `🎉 **Welcome to the Server Giveaways!**\n\n` +
+    `Join an active giveaway and win exciting rewards!\n` +
+    `📋 Select a giveaway from the menu below to Enter.\n\n` +
+    `Total Giveaways: ${guildGiveaways.length}`;
+
+  await sendSelectMenu(
+    interaction,
+    content,
+    `delete_giveaway_select`,
+    "🎟️ Choose a giveaway to view or enter...",
+    giveawayOptions
+  );
+}
 module.exports = {
   handlePointsSetup,
   handleSocialRewards,
@@ -456,4 +502,5 @@ module.exports = {
   handleCreateGiveaway,
   joinGiveaway,
   handleEditGiveaway,
+  handleDeleteGiveaway,
 };

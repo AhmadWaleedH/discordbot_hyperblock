@@ -69,6 +69,11 @@ module.exports = async (client, interaction) => {
       await buttonActions.handleEditGiveaway(interaction);
       break;
 
+    // edit raffle  ✅ - delete leaderboard ⏳
+    case customId === "delete_giveaway":
+      await buttonActions.handleDeleteGiveaway(interaction);
+      break;
+
     default:
       console.log("Unknown button action:", interaction.customId);
       break;

@@ -19,6 +19,7 @@ const serverSchema = new Schema({
       hyperMarket: { type: String },
       myBag: { type: String },
       hyperNotes: { type: String },
+      raffles: { type: String },
     },
     chats: {
       channels: {

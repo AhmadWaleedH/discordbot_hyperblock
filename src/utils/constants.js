@@ -6,4 +6,5 @@ exports.channels = [
   "hyper-market", // becomes hyperMarket in schema
   "my-bag", // becomes myBag in schema
   "hyper-notes", // becomes hyperNotes in schema
+  "raffles",
 ];

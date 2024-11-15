@@ -14,6 +14,12 @@ const buttonOptions = [
     style: ButtonStyle.Primary,
     customId: "edit_giveaway",
   },
+  {
+    label: "Delete",
+    emoji: "❌",
+    style: ButtonStyle.Danger,
+    customId: "delete_giveaway",
+  },
 ];
 
 const embedOptions = {
@@ -34,5 +40,6 @@ module.exports = {
       embedOptions,
       buttonOptions
     );
+    await interaction.reply("giveaway configuration is here :");
   },
 };

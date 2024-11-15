@@ -2,6 +2,10 @@ const mongoose = require("mongoose");
 const participantSchema = new mongoose.Schema({
   userId: { type: String, required: true },
 });
+
+const winnersSchema = new mongoose.Schema({
+  userId: { type: String, required: true },
+});
 const giveawaySchema = new mongoose.Schema({
   guildId: { type: String, required: true },
   channelId: { type: String, required: false },
@@ -21,6 +25,7 @@ const giveawaySchema = new mongoose.Schema({
   notes: String,
   totalParticipants: { type: Number, default: 0 },
   participants: [participantSchema],
+  winners: [winnersSchema],
   isExpired: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

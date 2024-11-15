@@ -10,10 +10,15 @@ const Guilds = require("../../models/Guilds");
 const ShopItem = require("../../models/Shop");
 const Users = require("../../models/Users");
 const showModal = require("../modelHandler");
+const ms = require("ms");
 const sendSelectMenu = require("../selectMenuHandler");
 const { updateGiveaway } = require("../commons");
 const Giveaway = require("../../models/raffles");
 const moment = require("moment");
+const {
+  createGiveawayEmbed,
+  editGiveawayMessage,
+} = require("../embeds/giveawayEmbed");
 async function teamSetupAdminRole(interaction) {
   const roleIds = interaction.values;
   const guildId = interaction.guildId;
@@ -439,6 +444,10 @@ async function purchaseItemDropDown(interaction) {
 }
 
 async function addRaffleOptionalDropDown(interaction, id) {
+  console.log(interaction.guildId);
+  const doc = await Guilds.findOne({ guildId: interaction.guildId });
+  console.log(doc);
+  const raffleChannelId = doc.botConfig.channels.raffles;
   const selectedOption = interaction.values[0];
   let modalCustomId;
   switch (selectedOption) {
@@ -450,48 +459,28 @@ async function addRaffleOptionalDropDown(interaction, id) {
           ephemeral: true,
         });
       }
-      const endTimeReadable = moment(giveaway.endTime).fromNow();
-      const giveawayEmbed = new EmbedBuilder()
-        .setColor("#FFD700")
-        .setTitle(`🎉 **${giveaway.raffleTitle}** 🎉`)
-        .setDescription(
-          `
-        > **${giveaway.numWinners}** Winners 
-        > **${giveaway.entryCost} Points - ** Cost 
-        > **Ends:** <t:${endTimeReadable}:F>
-        
-        > **Description:** 
-        ${giveaway.description || "No description provided"}
-        
-        ${
-          giveaway.partnerTwitter
-            ? `**Partner Twitter:** [${giveaway.partnerTwitter}](https://twitter.com/${giveaway.partnerTwitter})`
-            : ""
-        }
-        ${giveaway.notes ? `**Notes:** ${giveaway.notes}` : ""}
-      `
-        );
+      const { embed, components } = createGiveawayEmbed(giveaway);
 
-      // Create a "Join" button with an emoji
-      const joinButton = new ButtonBuilder()
-        .setCustomId(`joinGiveaway_${giveaway._id}`)
-        .setLabel("Join")
-        .setStyle(ButtonStyle.Primary)
-        .setEmoji("🎟️");
+      const raffleChannel =
+        interaction.guild.channels.cache.get(raffleChannelId);
 
-      // Add button to the action row
-      const row = new ActionRowBuilder().addComponents(joinButton);
+      if (!raffleChannel) {
+        return interaction.reply({
+          content:
+            "The raffle channel could not be found. Please check the configuration.",
+          ephemeral: true,
+        });
+      }
 
-      // Reply with the embed and button
-      const sentMessage = await interaction.reply({
-        embeds: [giveawayEmbed],
-        components: [row],
-        ephemeral: false,
-        fetchReply: true,
+      const sentMessage = await raffleChannel.send({
+        embeds: [embed],
+        components: components,
       });
 
+      await interaction.reply("the raffle has been sent to the channel!");
+
       giveaway.messageId = sentMessage.id;
-      giveaway.channelId = interaction.channelId;
+      giveaway.channelId = raffleChannelId;
       await giveaway.save();
       break;
     }
@@ -590,11 +579,6 @@ async function editRaffleDropdown(interaction) {
   let selectedOptions = interaction.values[0];
   const options = [
     {
-      label: "Save ",
-      description: "Just want to go ahead and save the required data..",
-      value: "save",
-    },
-    {
       label: "Name of Raffle",
       description: "Just want to go ahead and save the required data..",
       value: "edit_raffle_title",
@@ -615,7 +599,7 @@ async function editRaffleDropdown(interaction) {
       value: "edit_entry_cost",
     },
     {
-      label: "Duration time of the raffle",
+      label: "Duration time (2 hour, 5 days)",
       description: "Just want to go ahead and save the required data..",
       value: "edit_duration_time",
     },
@@ -650,17 +634,6 @@ async function editRaffleDropdown(interaction) {
   );
 
   const giveaway = await Giveaway.findById(selectedOptions);
-  const interactionVal = {
-    raffleTitle: giveaway.raffleTitle,
-    numWinners: giveaway.numWinners,
-    chain: giveaway.chain,
-    entryCost: giveaway.entryCost,
-    endTime: giveaway.endTime,
-    description: giveaway.description,
-    partnerTwitter: giveaway.partnerTwitter,
-    entriesLimited: giveaway.entriesLimited,
-    notes: giveaway.notes,
-  };
 
   const filter = (interaction) => {
     return interaction.customId.startsWith("edit_giveawayOptions_select_");
@@ -691,7 +664,7 @@ async function editRaffleDropdown(interaction) {
         },
         edit_no_winners: {
           title: "Edit Giveaway No of Winners",
-          customId: "edit_giveaway_noWinners",
+          customId: "edit_no_winners",
           fieldOptions: [
             {
               label: "No Of Winners",
@@ -716,7 +689,7 @@ async function editRaffleDropdown(interaction) {
           ],
         },
         edit_entry_cost: {
-          title: "Edit Entry Cost ",
+          title: "Edit Entry Cost (2 min, 5 hour) ",
           customId: "edit_entry_cost",
           fieldOptions: [
             {
@@ -774,7 +747,7 @@ async function editRaffleDropdown(interaction) {
               label: "Entries limited",
               customId: "edit_entries_limited",
               placeholder: "Edit Entries Limited",
-              value: giveaway.entriesLimited || 1,
+              value: giveaway.entriesLimited?.toString(),
               style: "Short",
             },
           ],
@@ -795,100 +768,12 @@ async function editRaffleDropdown(interaction) {
       };
 
       const modalConfig = modalConfigs[selectedValue];
-
-      if (selectedValue === "save") {
-        const actionRow = new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setCustomId("edit_raffle_submit")
-            .setLabel("Submit")
-            .setStyle(ButtonStyle.Success),
-          new ButtonBuilder()
-            .setCustomId("edit_raffle_delete")
-            .setLabel("Delete Item")
-            .setStyle(ButtonStyle.Danger),
-          new ButtonBuilder()
-            .setCustomId("edit_raffle_cancel")
-            .setLabel("Cancel")
-            .setStyle(ButtonStyle.Primary)
-        );
-
-        await selectInteraction.update({
-          content: "Confirm your choices:",
-          components: [actionRow],
-        });
-
-        const buttonCollector =
-          selectInteraction.channel.createMessageComponentCollector({
-            filter: (i) =>
-              i.user.id === interaction.user.id &&
-              [
-                "edit_raffle_submit",
-                "edit_raffle_cancel",
-                "edit_raffle_delete",
-              ].includes(i.customId),
-            max: 1,
-            time: 30000,
-          });
-
-        buttonCollector.on("collect", async (buttonInteraction) => {
-          if (buttonInteraction.customId === "edit_raffle_submit") {
-            const updatedGiveaway = await Giveaway.findByIdAndUpdate(
-              selectedOptions,
-              {
-                $set: {
-                  raffleTitle: interactionVal.raffleTitle,
-                  numWinners: interactionVal.numWinners,
-                  chain: interactionVal.chain,
-                  entryCost: interactionVal.entryCost,
-                  endTime: interactionVal.endTime,
-                  description: interactionVal.description,
-                  partnerTwitter: interactionVal.partnerTwitter,
-                  entriesLimited: interactionVal.entriesLimited,
-                  notes: interactionVal.notes,
-                },
-              },
-              { new: true }
-            );
-            await buttonInteraction.update({
-              content: "Shop item updated successfully!",
-              components: [],
-            });
-          } else if (buttonInteraction.customId === "edit_raffle_delete") {
-            const deletedGiveaway = await Giveaway.findByIdAndDelete(
-              selectedOptions
-            );
-            if (deletedGiveaway) {
-              await buttonInteraction.update({
-                content: "Shop item deleted successfully.",
-                components: [],
-              });
-            } else {
-              console.log("Giveaway not found with the given ID.");
-            }
-          } else if (buttonInteraction.customId === "edit_raffle_cancel") {
-            await buttonInteraction.update({
-              content: "Editing process canceled.",
-              components: [],
-            });
-          }
-        });
-
-        buttonCollector.on("end", async (collected) => {
-          if (!collected.size) {
-            await selectInteraction.editReply({
-              content: "Action timed out.",
-              components: [],
-            });
-          }
-        });
-      } else {
-        await showModal(
-          selectInteraction,
-          modalConfig.title,
-          modalConfig.customId,
-          modalConfig.fieldOptions
-        );
-      }
+      await showModal(
+        selectInteraction,
+        modalConfig.title,
+        modalConfig.customId,
+        modalConfig.fieldOptions
+      );
 
       try {
         const filter = (i) => {
@@ -901,51 +786,67 @@ async function editRaffleDropdown(interaction) {
         // Wait for modal submission
         const submitted = await selectInteraction.awaitModalSubmit({
           filter,
-          time: 600000, // Timeout after 60 seconds
+          time: 600000,
         });
 
         if (submitted) {
-          // Get the submitted values
           const submittedFields = submitted.fields.fields;
-          console.log(selectedOptions);
           switch (selectedValue) {
             case "edit_raffle_title":
-              console.log(submittedFields.get("edit_title").value);
-              interactionVal.raffleTitle =
-                submittedFields.get("edit_title").value;
+              giveaway.raffleTitle = submittedFields.get("edit_title").value;
+              giveaway.save();
+              await editGiveawayMessage(selectInteraction, giveaway);
               break;
-            case "edit_giveaway_noWinners":
-              interactionVal.numWinners = parseInt(
+            case "edit_no_winners":
+              const noOfWinners = Number(
                 submittedFields.get("no_of_winners").value
               );
+              console.log(noOfWinners);
+              giveaway.numWinners = noOfWinners;
+              giveaway.save();
+              await editGiveawayMessage(selectInteraction, giveaway);
+              break;
             case "edit_chain_project":
-              interactionVal.chain =
-                submittedFields.get("edit_chain_project").value;
+              giveaway.chain = submittedFields.get("edit_chain_project").value;
+              giveaway.save();
+              await editGiveawayMessage(selectInteraction, giveaway);
               break;
             case "edit_entry_cost":
-              interactionVal.entryCost =
-                submittedFields.get("edit_entry_cost").value;
+              giveaway.entryCost = Number(
+                submittedFields.get("edit_entry_cost").value
+              );
+              giveaway.save();
+              await editGiveawayMessage(selectInteraction, giveaway);
               break;
             case "edit_duration_time":
-              interactionVal.endTime =
-                submittedFields.get("edit_duration_time").value;
+              giveaway.endTime = new Date(
+                Date.now() + ms(submittedFields.get("edit_duration_time").value)
+              );
+              giveaway.save();
               break;
             case "edit_description":
-              interactionVal.description =
+              giveaway.description =
                 submittedFields.get("edit_description").value;
+              giveaway.save();
+              await editGiveawayMessage(selectInteraction, giveaway);
               break;
             case "edit_twitter_page":
-              interactionVal.partnerTwitter =
+              giveaway.description =
                 submittedFields.get("edit_twitter_page").value;
+              giveaway.save();
+              await editGiveawayMessage(selectInteraction, giveaway);
               break;
             case "edit_entries_limited":
-              interactionVal.entriesLimited = submittedFields.get(
-                "edit_entries_limited"
-              ).value;
+              giveaway.entriesLimited = Number(
+                submittedFields.get("edit_entries_limited").value
+              );
+              giveaway.save();
+              await editGiveawayMessage(selectInteraction, giveaway);
               break;
             case "edit_notes_follow":
-              interactionVal.notes =
-                submittedFields.get("edit_notes_follow").value;
+              giveaway.notes = submittedFields.get("edit_notes_follow").value;
+              giveaway.save();
+              await editGiveawayMessage(selectInteraction, giveaway);
               break;
           }
 
@@ -980,7 +881,15 @@ async function editRaffleDropdown(interaction) {
   });
 }
 
-async function editRaffleOptionalDropdown(interaction, id) {}
+async function deleteRaffleDropdown(interaction) {
+  const selectedId = interaction.values[0];
+  const giveaway = await Giveaway.findByIdAndDelete(selectedId);
+  if (giveaway) {
+    await interaction.reply("Successfully deleted the Selected Giveaway");
+  } else {
+    await interaction.reply("failed to delete the selected Giveaway!");
+  }
+}
 
 module.exports = {
   teamSetupAdminRole,
@@ -995,7 +904,7 @@ module.exports = {
   addRaffleOptionalDropDown,
   addRaffleOptionalsDb,
   editRaffleDropdown,
-  editRaffleOptionalDropdown,
+  deleteRaffleDropdown,
 };
 
 async function handlePurchase(userId, itemId, userRoles) {

@@ -84,11 +84,10 @@ module.exports = async (client, interaction) => {
       await dropdownActions.editRaffleDropdown(interaction);
       break;
 
-    // case customId.startsWith("edit_giveawayOptions_select_"): {
-    //   const itemId = customId.split("edit_giveawayOptions_select_")[1];
-    //   await dropdownActions.editRaffleOptionalDropdown(interaction, itemId);
-    //   break;
-    // }
+    // edit giveaway ✅  delete giveaway ⏳
+    case customId === "delete_giveaway_select":
+      await dropdownActions.deleteRaffleDropdown(interaction);
+      break;
 
     default:
       console.log("Unknown modal submission:", interaction.customId);
