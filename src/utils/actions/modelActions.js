@@ -240,7 +240,7 @@ async function handleEditItemModelSubmission(interaction, id) {
 
   // Reply with the role selection menu
   await interaction.reply({
-    content: "Please select roles that will be able to buy this item",
+    content: "Please select roles that will be given to buyer of the item",
     components: [roleSelectRow],
     ephemeral: true,
   });
