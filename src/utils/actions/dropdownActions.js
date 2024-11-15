@@ -170,7 +170,7 @@ async function addAdditionalItemOptions(interaction, id) {
   switch (selectedAction) {
     case "none":
       await interaction.reply(
-        "Items Created Successfully, You chose not to add a Blockchain / RoleGate."
+        "Items Created Successfully."
       );
       break;
 
@@ -327,7 +327,7 @@ async function purchaseItemDropDown(interaction) {
   const userRoles = interaction.member.roles.cache.map((role) => role.id);
 
   // First validate the purchase
-  const validation = await handlePurchase(userId, itemId, userRoles);
+  const validation = await handlePurchase(userId, itemId, userRoles, interaction.guild.id);
 
   if (!validation.success) {
     return await interaction.reply({
@@ -907,10 +907,12 @@ module.exports = {
   deleteRaffleDropdown,
 };
 
-async function handlePurchase(userId, itemId, userRoles) {
+async function handlePurchase(userId, itemId, userRoles,guildId) {
   try {
     const user = await Users.findOne({ discordId: userId });
     const item = await ShopItem.findById(itemId);
+
+    const serverMembership= user.serverMemberships.find(s=> s.guildId === guildId)
     console.log(userRoles);
     // Check user existence
     if (!user) {
@@ -931,9 +933,10 @@ async function handlePurchase(userId, itemId, userRoles) {
     }
 
     // Validate price and points
+
     if (
       typeof item.price !== "number" ||
-      typeof user.hyperBlockPoints !== "number"
+      typeof serverMembership !== "number"
     ) {
       return { success: false, message: "Invalid item price or user points." };
     }
@@ -955,7 +958,7 @@ async function handlePurchase(userId, itemId, userRoles) {
     }
 
     // Check points
-    if (user.hyperBlockPoints < item.price) {
+    if (serverMembership < item.price) {
       return { success: false, message: "Insufficient points." };
     }
 
