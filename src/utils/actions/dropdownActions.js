@@ -336,7 +336,9 @@ async function purchaseItemDropDown(interaction) {
     });
   }
 
-  const { item, user } = validation;
+
+
+  const { item, user , serverMembership} = validation;
   const embed = new EmbedBuilder()
     .setTitle(item.name)
     .setDescription(
@@ -371,7 +373,7 @@ async function purchaseItemDropDown(interaction) {
     if (i.customId === "confirm_purchase") {
       try {
         // Process the purchase
-        user.hyperBlockPoints -= item.price;
+        serverMembership.points -= item.price;
         user.purchases.push({
           itemId: item._id,
           totalPrice: item.price,
@@ -936,7 +938,7 @@ async function handlePurchase(userId, itemId, userRoles,guildId) {
 
     if (
       typeof item.price !== "number" ||
-      typeof serverMembership !== "number"
+      typeof serverMembership.points !== "number"
     ) {
       return { success: false, message: "Invalid item price or user points." };
     }
@@ -958,7 +960,7 @@ async function handlePurchase(userId, itemId, userRoles,guildId) {
     }
 
     // Check points
-    if (serverMembership < item.price) {
+    if (serverMembership.points < item.price) {
       return { success: false, message: "Insufficient points." };
     }
 
@@ -974,7 +976,7 @@ async function handlePurchase(userId, itemId, userRoles,guildId) {
       };
     }
 
-    return { success: true, item, user };
+    return { success: true, item, user,serverMembership };
   } catch (error) {
     console.error("Validation error:", error);
     return {
