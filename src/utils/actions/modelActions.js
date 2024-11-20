@@ -204,7 +204,7 @@ async function handleAddItemModelSubmission(interaction) {
 
     const row = new ActionRowBuilder().addComponents(roleSelect);
     await interaction.reply({
-      content: "Please select the role for submission:",
+      content: "Please select the role that will be given to buyer of the item.",
       components: [row],
       ephemeral: true,
     });
@@ -241,7 +241,7 @@ async function handleEditItemModelSubmission(interaction, id) {
 
   // Reply with the role selection menu
   await interaction.reply({
-    content: "Please select roles for this item:",
+    content: "Please select roles that will be given to buyer of the item",
     components: [roleSelectRow],
     ephemeral: true,
   });

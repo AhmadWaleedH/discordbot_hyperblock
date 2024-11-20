@@ -218,9 +218,7 @@ async function addAdditionalItemOptions(interaction, id) {
       await embedMessage.save();
 
       // Confirm to user
-      await interaction.reply(
-        `✅ **Item listing has been sent to ${hypermarketChannel}!**`
-      );
+      await interaction.reply("Items Created Successfully.");
       break;
     }
 
@@ -377,7 +375,12 @@ async function purchaseItemDropDown(interaction) {
   const userRoles = interaction.member.roles.cache.map((role) => role.id);
 
   // First validate the purchase
-  const validation = await handlePurchase(userId, itemId, userRoles);
+  const validation = await handlePurchase(
+    userId,
+    itemId,
+    userRoles,
+    interaction.guild.id
+  );
 
   if (!validation.success) {
     return await interaction.reply({
@@ -386,7 +389,7 @@ async function purchaseItemDropDown(interaction) {
     });
   }
 
-  const { item, user } = validation;
+  const { item, user, serverMembership } = validation;
   const embed = new EmbedBuilder()
     .setTitle(item.name)
     .setDescription(
@@ -421,7 +424,7 @@ async function purchaseItemDropDown(interaction) {
     if (i.customId === "confirm_purchase") {
       try {
         // Process the purchase
-        user.hyperBlockPoints -= item.price;
+        serverMembership.points -= item.price;
         user.purchases.push({
           itemId: item._id,
           totalPrice: item.price,
@@ -956,3 +959,77 @@ module.exports = {
   editRaffleDropdown,
   deleteRaffleDropdown,
 };
+
+async function handlePurchase(userId, itemId, userRoles) {
+  try {
+    const user = await Users.findOne({ discordId: userId });
+    const item = await ShopItem.findById(itemId);
+    console.log(userRoles);
+    // Check user existence
+    if (!user) {
+      return { success: false, message: "User not found." };
+    }
+
+    // Check item existence
+    if (!item) {
+      return { success: false, message: "Item not found." };
+    }
+
+    // Check account status
+    if (user.status !== "active") {
+      return {
+        success: false,
+        message: "Your account status does not allow purchases.",
+      };
+    }
+
+    // Validate price and points
+    if (
+      typeof item.price !== "number" ||
+      typeof user.hyperBlockPoints !== "number"
+    ) {
+      return { success: false, message: "Invalid item price or user points." };
+    }
+
+    // Check required role
+    if (
+      item.requiredRoleToPurchase &&
+      !userRoles.includes(item.requiredRoleToPurchase)
+    ) {
+      return {
+        success: false,
+        message: "You do not have the required role to purchase this item.",
+      };
+    }
+
+    // Check stock
+    if (item.quantity === 0) {
+      return { success: false, message: "This item is out of stock." };
+    }
+
+    // Check points
+    if (user.hyperBlockPoints < item.price) {
+      return { success: false, message: "Insufficient points." };
+    }
+
+    // Check previous purchase
+    const alreadyPurchased = user.purchases.some(
+      (purchase) =>
+        purchase.itemId.toString() === itemId && !item.allowMultiplePurchases
+    );
+    if (alreadyPurchased) {
+      return {
+        success: false,
+        message: "This item can only be purchased once.",
+      };
+    }
+
+    return { success: true, item, user };
+  } catch (error) {
+    console.error("Validation error:", error);
+    return {
+      success: false,
+      message: "An error occurred while validating the purchase.",
+    };
+  }
+}
