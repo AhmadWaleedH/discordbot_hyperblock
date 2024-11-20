@@ -3,6 +3,9 @@ const {
   ActionRowBuilder,
   RoleSelectMenuBuilder,
   ChannelSelectMenuBuilder,
+  EmbedBuilder,
+  ButtonBuilder,
+  ButtonStyle,
 } = require("discord.js");
 
 const Guilds = require("../../models/Guilds");
@@ -12,6 +15,7 @@ const sendSelectMenu = require("../selectMenuHandler");
 const Shop = require("../../models/Shop");
 const Giveaway = require("../../models/raffles");
 const User = require("../../models/Users");
+const { handlePurchase } = require("../commons");
 const ITEM_EMOJIS = {
   weapon: "⚔️",
   armor: "🛡️",
@@ -280,7 +284,126 @@ async function handlePurchaseItems(interaction) {
     shopOptions
   );
 }
+async function handleAddedPurchaseItems(interaction, id) {
+  const userId = interaction.user.id;
+  const userRoles = interaction.member.roles.cache.map((role) => role.id);
 
+  // First validate the purchase
+  const validation = await handlePurchase(userId, id, userRoles);
+
+  if (!validation.success) {
+    return await interaction.reply({
+      content: validation.message,
+      ephemeral: true,
+    });
+  }
+
+  const { item, user } = validation;
+  const embed = new EmbedBuilder()
+    .setTitle(item.name)
+    .setDescription(
+      `Are you sure you want to buy this item for ${item.price} points?`
+    )
+    .setColor("#2f3136");
+
+  // Create the buttons
+  const confirmButton = new ButtonBuilder()
+    .setCustomId("confirm_purchase")
+    .setStyle(ButtonStyle.Success)
+    .setLabel("✓");
+
+  const cancelButton = new ButtonBuilder()
+    .setCustomId("cancel_purchase")
+    .setStyle(ButtonStyle.Danger)
+    .setLabel("✕");
+
+  const row = new ActionRowBuilder().addComponents(confirmButton, cancelButton);
+
+  const response = await interaction.reply({
+    embeds: [embed],
+    components: [row],
+    fetchReply: true,
+  });
+
+  const collector = response.createMessageComponentCollector({
+    time: 60000,
+  });
+
+  collector.on("collect", async (i) => {
+    if (i.customId === "confirm_purchase") {
+      try {
+        // Process the purchase
+        user.hyperBlockPoints -= item.price;
+        user.purchases.push({
+          itemId: item._id,
+          totalPrice: item.price,
+        });
+
+        if (item.quantity > 0) {
+          item.quantity -= 1;
+          await item.save();
+        }
+
+        await user.save();
+
+        if (item.role) {
+          try {
+            const member = await i.guild.members.fetch(i.user.id);
+            await member.roles.add(item.role);
+
+            await i.update({
+              content: `Successfully purchased the item for ${item.price} points! The role has been added to your profile.`,
+              embeds: [],
+              components: [],
+            });
+          } catch (roleError) {
+            console.error("Role assignment error:", roleError);
+            await i.update({
+              content: `Purchase successful, but there was an issue adding the role. Please contact an administrator.\nError: ${roleError.message}`,
+              embeds: [],
+              components: [],
+            });
+          }
+        } else {
+          await i.update({
+            content: `Successfully purchased the item for ${item.price} points!`,
+            embeds: [],
+            components: [],
+          });
+        }
+      } catch (error) {
+        await i.update({
+          content: "An error occurred while processing your purchase.",
+          embeds: [],
+          components: [],
+        });
+      }
+    }
+
+    if (i.customId === "cancel_purchase") {
+      await i.update({
+        content: "Purchase cancelled.",
+        embeds: [],
+        components: [],
+      });
+    }
+
+    collector.stop();
+  });
+
+  // Handle collector end
+  collector.on("end", (collected, reason) => {
+    if (reason === "time") {
+      interaction
+        .editReply({
+          content: "Purchase confirmation timed out.",
+          embeds: [],
+          components: [],
+        })
+        .catch(console.error);
+    }
+  });
+}
 async function handleCreateGiveaway(interaction) {
   const fieldOptions = [
     {
@@ -499,6 +622,7 @@ module.exports = {
   handleAddItems,
   handleEditItems,
   handlePurchaseItems,
+  handleAddedPurchaseItems,
   handleCreateGiveaway,
   joinGiveaway,
   handleEditGiveaway,

@@ -51,6 +51,12 @@ module.exports = async (client, interaction) => {
       await buttonActions.handlePurchaseItems(interaction);
       break;
 
+    case customId.startsWith("purchase_add_item_"): {
+      const itemId = customId.split("purchase_add_item_")[1];
+      await buttonActions.handleAddedPurchaseItems(interaction, itemId);
+      break;
+    }
+
     // purchase item ✅ raffle - create raffle ⏳
 
     case customId === "create_giveaway":

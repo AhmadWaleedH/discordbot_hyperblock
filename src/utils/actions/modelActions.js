@@ -11,7 +11,8 @@ const ms = require("ms");
 const showModal = require("../modelHandler");
 const sendSelectMenu = require("../selectMenuHandler");
 const Giveaway = require("../../models/raffles");
-const { updateGiveaway } = require("../commons");
+const { updateGiveaway, generateItemEmbed } = require("../commons");
+const EmbedMessages = require("../../models/EmbedMessages");
 async function handleSocialRewardsSubmission(interaction) {
   const guildId = interaction.guildId;
   const fields = interaction.fields;
@@ -294,6 +295,33 @@ async function handleEditItemModelSubmission(interaction, id) {
         shopItem.role = selectedRoles;
         await shopItem.save();
 
+        const item = await ShopItem.findById(id);
+        const { embed, row } = generateItemEmbed(item, interaction);
+        const embedMessage = await EmbedMessages.findOne({ itemId: id });
+        console.log(embedMessage);
+        const { guildId, channelId, messageId } = embedMessage;
+
+        const guild = await interaction.client.guilds.fetch(guildId);
+        if (!guild) {
+          throw new Error("Guild not found.");
+        }
+
+        const channel = await guild.channels.fetch(channelId);
+        console.log(channel);
+        if (!channel) {
+          throw new Error("Channel not found or is not a text channel.");
+        }
+
+        // Fetch the message and update it
+        const message = await channel.messages.fetch(messageId);
+        if (!message) {
+          throw new Error("Message not found.");
+        }
+
+        await message.edit({
+          embeds: [embed],
+          components: [row],
+        });
         await buttonInteraction.update({
           content: "Shop item updated successfully!",
           components: [],
@@ -393,7 +421,7 @@ async function handleAddRaffle(interaction) {
 
   const options = [
     {
-      label: "None",
+      label: "Run",
       description: "Just want to go ahead and save the required data..",
       value: "none",
     },

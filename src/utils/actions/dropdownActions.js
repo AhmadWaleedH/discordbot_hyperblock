@@ -12,13 +12,18 @@ const Users = require("../../models/Users");
 const showModal = require("../modelHandler");
 const ms = require("ms");
 const sendSelectMenu = require("../selectMenuHandler");
-const { updateGiveaway } = require("../commons");
+const {
+  updateGiveaway,
+  handlePurchase,
+  generateItemEmbed,
+} = require("../commons");
 const Giveaway = require("../../models/raffles");
 const moment = require("moment");
 const {
   createGiveawayEmbed,
   editGiveawayMessage,
 } = require("../embeds/giveawayEmbed");
+const EmbedMessages = require("../../models/EmbedMessages");
 async function teamSetupAdminRole(interaction) {
   const roleIds = interaction.values;
   const guildId = interaction.guildId;
@@ -133,7 +138,7 @@ async function addItemRoleDropDown(interaction, id) {
 
     const options = [
       {
-        label: "None",
+        label: "Run",
         description: "Dont want to add Blockchain / RoleGate",
         value: "none",
       },
@@ -168,11 +173,56 @@ async function addItemRoleDropDown(interaction, id) {
 async function addAdditionalItemOptions(interaction, id) {
   const selectedAction = interaction.values[0];
   switch (selectedAction) {
-    case "none":
+    case "none": {
+      const item = await ShopItem.findById(id);
+      if (!item) {
+        return interaction.reply("❌ **Item not found in the shop!**");
+      }
+
+      // Find the guild and get hypermarket channel
+      const guild = await Guilds.findOne({ guildId: interaction.guild.id });
+      if (!guild) {
+        return interaction.reply("❌ **Server configuration not found!**");
+      }
+
+      const hypermarketChannelId = guild.botConfig.channels.hyperMarket;
+      if (!hypermarketChannelId) {
+        return interaction.reply("❌ **Hypermarket channel not configured!**");
+      }
+
+      const hypermarketChannel = await interaction.guild.channels.fetch(
+        hypermarketChannelId
+      );
+      if (!hypermarketChannel) {
+        return interaction.reply("❌ **Hypermarket channel not found!**");
+      }
+
+      const { embed, row } = generateItemEmbed(item, interaction);
+
+      // Send to hypermarket channel
+      const sentMessage = await hypermarketChannel.send({
+        embeds: [embed],
+        components: [row],
+      });
+
+      const guildId = sentMessage.guild.id;
+      const channelId = sentMessage.channel.id;
+      const messageId = sentMessage.id;
+
+      const embedMessage = new EmbedMessages({
+        itemId: id,
+        guildId,
+        channelId,
+        messageId,
+      });
+      await embedMessage.save();
+
+      // Confirm to user
       await interaction.reply(
-        "Items Created Successfully, You chose not to add a Blockchain / RoleGate."
+        `✅ **Item listing has been sent to ${hypermarketChannel}!**`
       );
       break;
+    }
 
     case "blockchain": {
       const options = [
@@ -906,77 +956,3 @@ module.exports = {
   editRaffleDropdown,
   deleteRaffleDropdown,
 };
-
-async function handlePurchase(userId, itemId, userRoles) {
-  try {
-    const user = await Users.findOne({ discordId: userId });
-    const item = await ShopItem.findById(itemId);
-    console.log(userRoles);
-    // Check user existence
-    if (!user) {
-      return { success: false, message: "User not found." };
-    }
-
-    // Check item existence
-    if (!item) {
-      return { success: false, message: "Item not found." };
-    }
-
-    // Check account status
-    if (user.status !== "active") {
-      return {
-        success: false,
-        message: "Your account status does not allow purchases.",
-      };
-    }
-
-    // Validate price and points
-    if (
-      typeof item.price !== "number" ||
-      typeof user.hyperBlockPoints !== "number"
-    ) {
-      return { success: false, message: "Invalid item price or user points." };
-    }
-
-    // Check required role
-    if (
-      item.requiredRoleToPurchase &&
-      !userRoles.includes(item.requiredRoleToPurchase)
-    ) {
-      return {
-        success: false,
-        message: "You do not have the required role to purchase this item.",
-      };
-    }
-
-    // Check stock
-    if (item.quantity === 0) {
-      return { success: false, message: "This item is out of stock." };
-    }
-
-    // Check points
-    if (user.hyperBlockPoints < item.price) {
-      return { success: false, message: "Insufficient points." };
-    }
-
-    // Check previous purchase
-    const alreadyPurchased = user.purchases.some(
-      (purchase) =>
-        purchase.itemId.toString() === itemId && !item.allowMultiplePurchases
-    );
-    if (alreadyPurchased) {
-      return {
-        success: false,
-        message: "This item can only be purchased once.",
-      };
-    }
-
-    return { success: true, item, user };
-  } catch (error) {
-    console.error("Validation error:", error);
-    return {
-      success: false,
-      message: "An error occurred while validating the purchase.",
-    };
-  }
-}
