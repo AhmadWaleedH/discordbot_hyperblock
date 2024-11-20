@@ -690,7 +690,7 @@ async function editRaffleDropdown(interaction) {
           fieldOptions: [
             {
               label: " Duration Time",
-              customId: "edit_entry_cost",
+              customId: "edit_duration_time",
               placeholder: "Enter Duration Time",
               style: "Short",
             },
@@ -770,6 +770,7 @@ async function editRaffleDropdown(interaction) {
         });
         if (submitted) {
           const submittedFields = submitted.fields.fields;
+          console.log(submittedFields);
           switch (selectedValue) {
             case "edit_raffle_title":
               giveaway.raffleTitle = submittedFields.get("edit_title").value;
@@ -798,9 +799,12 @@ async function editRaffleDropdown(interaction) {
               await editGiveawayMessage(selectInteraction, giveaway);
               break;
             case "edit_duration_time":
+              console.log(submittedFields.get("edit_duration_time").value);
               giveaway.endTime = new Date(
                 Date.now() + ms(submittedFields.get("edit_duration_time").value)
               );
+              t;
+              await editGiveawayMessage(selectInteraction, giveaway);
               giveaway.save();
               break;
             case "edit_description":

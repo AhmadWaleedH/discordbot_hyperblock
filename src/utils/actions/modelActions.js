@@ -204,7 +204,8 @@ async function handleAddItemModelSubmission(interaction) {
 
     const row = new ActionRowBuilder().addComponents(roleSelect);
     await interaction.reply({
-      content: "Please select the role that will be given to buyer of the item.",
+      content:
+        "Please select the role that will be given to buyer of the item.",
       components: [row],
       ephemeral: true,
     });
@@ -363,52 +364,58 @@ async function handleEditItemModelSubmission(interaction, id) {
   });
 }
 async function handleAddRaffle(interaction) {
-  // if (!raffleTitle || raffleTitle.trim() === "") {
-  //   return interaction.reply({
-  //     content: "❌ Please provide a valid raffle title.",
-  //     ephemeral: true,
-  //   });
-  // }
+  const raffleTitle = interaction.fields.getTextInputValue("raffle_title");
+  const numWinners = Number(
+    interaction.fields.getTextInputValue("num_of_winners") || 1
+  );
+  const entryCost = Number(interaction.fields.getTextInputValue("entry_cost"));
+  const durationTime = interaction.fields.getTextInputValue("duration_time");
+  const endTime = new Date(
+    Date.now() + ms(interaction.fields.getTextInputValue("duration_time"))
+  );
+  const chain = interaction.fields.getTextInputValue("chain_project");
+  if (!raffleTitle || raffleTitle.trim() === "") {
+    return interaction.reply({
+      content: "❌ Please provide a valid raffle title.",
+      ephemeral: true,
+    });
+  }
 
-  // if (isNaN(numWinners) || numWinners <= 0) {
-  //   return interaction.reply({
-  //     content: "❌ The number of winners must be a positive number.",
-  //     ephemeral: true,
-  //   });
-  // }
+  if (isNaN(numWinners) || numWinners <= 0) {
+    return interaction.reply({
+      content: "❌ The number of winners must be a positive number.",
+      ephemeral: true,
+    });
+  }
 
-  // if (isNaN(entryCost) || entryCost < 0) {
-  //   return interaction.reply({
-  //     content: "❌ Entry cost must be a valid positive number.",
-  //     ephemeral: true,
-  //   });
-  // }
+  if (isNaN(entryCost) || entryCost < 0) {
+    return interaction.reply({
+      content: "❌ Entry cost must be a valid positive number.",
+      ephemeral: true,
+    });
+  }
 
-  // if (!durationTime || isNaN(ms(durationTime))) {
-  //   return interaction.reply({
-  //     content:
-  //       "❌ Please provide a valid duration time (e.g., '1 hour', '30 minutes').",
-  //     ephemeral: true,
-  //   });
-  // }
+  if (!durationTime || isNaN(ms(durationTime))) {
+    return interaction.reply({
+      content:
+        "❌ Please provide a valid duration time (e.g., '1 hour', '30 minutes').",
+      ephemeral: true,
+    });
+  }
 
-  // if (!chain || chain.trim() === "") {
-  //   return interaction.reply({
-  //     content: "❌ Please provide a valid chain project.",
-  //     ephemeral: true,
-  //   });
-  // }
+  if (!chain || chain.trim() === "") {
+    return interaction.reply({
+      content: "❌ Please provide a valid chain project.",
+      ephemeral: true,
+    });
+  }
   const giveaway = new Giveaway({
     guildId: interaction.guildId,
-    raffleTitle: interaction.fields.getTextInputValue("raffle_title"),
-    numWinners: Number(
-      interaction.fields.getTextInputValue("num_of_winners") || 1
-    ),
-    entryCost: Number(interaction.fields.getTextInputValue("entry_cost")),
-    endTime: new Date(
-      Date.now() + ms(interaction.fields.getTextInputValue("duration_time"))
-    ),
-    chain: interaction.fields.getTextInputValue("chain_project"),
+    raffleTitle: raffleTitle,
+    numWinners: numWinners,
+    entryCost: entryCost,
+    endTime: endTime,
+    chain: chain,
   });
   giveaway
     .save()
