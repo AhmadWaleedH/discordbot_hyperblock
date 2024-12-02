@@ -29,20 +29,26 @@ async function saveImage(buffer, filename) {
   fs.writeFileSync(filename, buffer);
 }
 
+const defaultAvatarUrl =
+  "https://media.discordapp.net/attachments/620548120803016725/1313199776174702702/discord-logo-discord-icon-transparent-free-png.webp?ex=674f4418&is=674df298&hm=e3435d7291da250f2a633ae66c5c34014cd4470c7c615f8939f504425a986439&=&format=webp&width=620&height=620";
+
 module.exports = {
   name: "mybag",
   description: "Check your bag and see the credit card image!",
   callback: async (client, interaction) => {
     try {
-      const guildIconURL = interaction.guild.iconURL({
-        format: "png",
-        size: 256,
-      });
-      const userAvatarURL = interaction.user.displayAvatarURL({
-        format: "png",
-        size: 256,
-      });
+      const guildIconURL =
+        interaction.guild.iconURL({
+          format: "png",
+          size: 256,
+        }) || defaultAvatarUrl;
 
+      // Get the user avatar URL (with fallback to default)
+      const userAvatarURL =
+        interaction.user.displayAvatarURL({
+          format: "png",
+          size: 256,
+        }) || defaultAvatarUrl;
       const tempGuildIconPath = path.join(
         __dirname,
         "../../",
@@ -153,7 +159,7 @@ module.exports = {
             new ButtonBuilder()
               .setLabel("Customize")
               .setStyle(ButtonStyle.Link)
-              .setURL("https://yourlink.com") // Replace with the desired URL
+              .setURL("https://yourlink.com")
           ),
         ],
       });
