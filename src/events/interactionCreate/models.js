@@ -75,6 +75,45 @@ module.exports = async (client, interaction) => {
       break;
     }
 
+    // add raffle ✅ add Auction ⏳
+
+    case customId === "add_auction_model":
+      await modelActions.addAuctionModal(interaction);
+      break;
+
+    // add Auction ✅ edit Auction ⏳
+    case customId === "edit_auction_modal":
+      await modelActions.editAuctionModal(interaction);
+      break;
+
+    case customId.startsWith("edit_auction_modal_"): {
+      const itemId = customId.split("edit_auction_modal_")[1];
+      await modelActions.editAuctionModal(interaction, itemId);
+      break;
+    }
+    // edit Auction ✅ Bid Auction ⏳
+    case customId.startsWith("bid_amount_modal_"): {
+      const itemId = customId.split("bid_amount_modal_")[1];
+      await modelActions.handleBidAmountModal(interaction, itemId);
+      break;
+    }
+
+    case customId.startsWith("change_wallet_"): {
+      const itemId = customId.split("change_wallet_")[1];
+      await modelActions.handleChangeWalletModal(interaction, itemId);
+      break;
+    }
+
+    // Bid Auction ✅ User Socials ⏳
+    case customId === "social_settings_modal":
+      await modelActions.handleSocialSettingsModal(interaction);
+      break;
+
+    case customId.startsWith("mint_wallet_modal_"): {
+      const itemId = customId.split("mint_wallet_modal_")[1];
+      await modelActions.handleMintWalletModals(interaction, itemId);
+      break;
+    }
     default:
       console.log("Unknown modal submission:", interaction.customId);
       break;

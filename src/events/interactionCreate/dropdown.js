@@ -89,6 +89,31 @@ module.exports = async (client, interaction) => {
       await dropdownActions.deleteRaffleDropdown(interaction);
       break;
 
+    // delete giveaway ✅ add auction ⏳
+
+    case customId.startsWith("add_auction_role_select_"): {
+      const itemId = customId.split("add_auction_role_select_")[1];
+      await dropdownActions.addAuctionRoleDropdown(interaction, itemId);
+      break;
+    }
+    //  add auction ✅ edit auction ⏳
+
+    case customId === "edit_auction_select":
+      await dropdownActions.editAuctionSelect(interaction);
+      break;
+    //  edit auction ✅ delete auction ⏳
+    case customId === "delete_auction_select":
+      await dropdownActions.deleteAuctionSelect(interaction);
+      break;
+    //  delete auction ✅ bid auction ⏳
+    case customId === "bid_auction_select":
+      await dropdownActions.bidAuctionSelect(interaction);
+      break;
+
+    case customId === "add_mint_wallet_select":
+      await dropdownActions.mintWalletSelect(interaction);
+      break;
+
     default:
       console.log("Unknown modal submission:", interaction.customId);
       break;

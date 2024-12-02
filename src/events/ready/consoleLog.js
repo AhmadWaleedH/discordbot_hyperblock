@@ -2,6 +2,11 @@ const { ActivityType, EmbedBuilder } = require("discord.js");
 const { default: mongoose } = require("mongoose");
 const cron = require("node-cron");
 const Giveaway = require("../../models/raffles");
+const {
+  initAuctionExpirationSystem,
+  endAuction,
+} = require("../../utils/jobs/auctionJob");
+const Auction = require("../../models/Auction");
 function selectRandomWinners(participants, numWinners) {
   const shuffled = [...participants].sort(() => 0.5 - Math.random());
   return shuffled.slice(0, Math.min(numWinners, participants.length));
@@ -72,6 +77,24 @@ module.exports = async (client) => {
       console.error("Error in cron job:", error);
     });
   });
+
+  cron.schedule("* * * * *", async () => {
+    try {
+      // Find all active auctions that have expired
+      const expiredAuctions = await Auction.find({
+        status: "active",
+        duration: { $lte: new Date() },
+      });
+
+      for (const auction of expiredAuctions) {
+        await endAuction(auction, client);
+      }
+    } catch (error) {
+      console.error("Error in auction expiration system:", error);
+    }
+  });
+
+  console.log("Auction expiration system initialized");
 };
 
 async function processExpiredGiveaways(client) {

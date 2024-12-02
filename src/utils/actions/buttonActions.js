@@ -6,6 +6,7 @@ const {
   EmbedBuilder,
   ButtonBuilder,
   ButtonStyle,
+  StringSelectMenuBuilder,
 } = require("discord.js");
 
 const Guilds = require("../../models/Guilds");
@@ -16,6 +17,8 @@ const Shop = require("../../models/Shop");
 const Giveaway = require("../../models/raffles");
 const User = require("../../models/Users");
 const { handlePurchase } = require("../commons");
+const Auction = require("../../models/Auction");
+const { createCreditCardBackImage } = require("../canvas/back");
 const ITEM_EMOJIS = {
   weapon: "⚔️",
   armor: "🛡️",
@@ -612,6 +615,192 @@ async function handleDeleteGiveaway(interaction) {
     giveawayOptions
   );
 }
+
+async function handleAddAuction(interaction) {
+  const fieldOptions = [
+    {
+      label: "Name of Item",
+      customId: "item_name",
+      placeholder: "Enter Name of Item",
+      style: "Short",
+      require: true,
+    },
+    {
+      label: "Quantity of the Item",
+      customId: "item_quantity",
+      placeholder: "Enter quantity of the item",
+      style: "Short",
+      require: true,
+    },
+    {
+      label: "Chain of the item",
+      customId: "item_chain",
+      placeholder: "Enter Chain of the item",
+      style: "Short",
+      require: true,
+    },
+    {
+      label: "Duration time (2min/2hour/5days)",
+      customId: "item_duration",
+      placeholder: "Enter Duration of the item",
+      style: "Short",
+      require: true,
+    },
+    {
+      label: "Description of the item",
+      customId: "item_description",
+      placeholder: "Enter description of the item",
+      style: "Short",
+      require: true,
+    },
+  ];
+
+  await showModal(
+    interaction,
+    "Add Auction",
+    "add_auction_model",
+    fieldOptions
+  );
+}
+
+async function handleEditAuction(interaction) {
+  await displayActiveAuctions(interaction, "edit_auction_select");
+}
+
+async function handleDeleteAuction(interaction) {
+  await displayActiveAuctions(interaction, "delete_auction_select");
+}
+
+async function handleBidAuction(interaction) {
+  await displayActiveAuctions(interaction, "bid_auction_select");
+}
+
+async function handleFlipBag(interaction) {
+  console.log("here");
+  // Data for generating the image
+  const cardData = {
+    backgroundImagePath: "background.jpg",
+    chipImagePath: "chip.png",
+    iconsWithText: [
+      {
+        iconPath: "green.png",
+        text: "Utilities of Paid Users:",
+        iconSize: 14,
+        xPosIcon: 15,
+        yPosIcon: 25,
+      },
+      {
+        iconPath: "png.png",
+        text: "Create your card in your style",
+        iconSize: 14,
+        xPosIcon: 5,
+        yPosIcon: 65,
+      },
+      {
+        iconPath: "png.png",
+        text: "Earn HyperBlock Points while ",
+        iconSize: 14,
+        xPosIcon: 5,
+        yPosIcon: 85,
+      },
+      {
+        iconPath: "png.png",
+        text: "earning server's points",
+        iconSize: 14,
+        xPosIcon: 5,
+        yPosIcon: 105,
+      },
+      {
+        iconPath: "png.png",
+        text: "Auto-enrolled in HyperBlock raffles",
+        iconSize: 14,
+        xPosIcon: 5,
+        yPosIcon: 125,
+      },
+      {
+        iconPath: "png.png",
+        text: "with 888 points",
+        iconSize: 14,
+        xPosIcon: 5,
+        yPosIcon: 145,
+      },
+      {
+        iconPath: "whitearrow.png",
+        text: "Auto-discount applied at Merch Store.",
+        iconSize: 14,
+        xPosIcon: 5,
+        yPosIcon: 205,
+      },
+    ],
+    footerText: [
+      { text: "Future Airdrops from HyperBlock", xPos: 25, yPos: 175 },
+      { text: "& much more", xPos: 25, yPos: 193 },
+    ],
+  };
+
+  try {
+    // Generate the image and get the file path
+    const imagePath = await createCreditCardBackImage(cardData);
+    console.log(imagePath);
+    // // Create the attachment to send to Discord
+    // const attachment = new MessageAttachment(imagePath);
+
+    // Send the image as a response
+    await interaction.update({
+      content: "Here is your generated credit card image:",
+      files: [imagePath],
+    });
+  } catch (err) {
+    console.error("Error generating the image:", err);
+    await interaction.update({
+      content:
+        "There was an error generating the credit card image. Please try again later.",
+    });
+  }
+}
+
+async function handlePlaceBidAuction(interaction, id) {
+  const fieldOptions = [
+    {
+      label: "Add the Amount to Bid",
+      customId: "bid_amount",
+      placeholder: "Enter Bid Amount (1,2,4,5)",
+      style: "Short",
+    },
+  ];
+
+  await showModal(
+    interaction,
+    "Amount to Bid",
+    `bid_amount_modal_${id}`,
+    fieldOptions
+  );
+}
+
+async function handleChangeWalletAuction(interaction, id) {
+  const user = await User.findOne({ discordId: interaction.userId });
+  if (!user) {
+    await interaction.reply({
+      content: "No User Found",
+    });
+  }
+
+  const fieldOptions = [
+    {
+      label: "Change Wallet",
+      customId: "change_wallet",
+      placeholder: "Enter change Wallet",
+      style: "Short",
+    },
+  ];
+
+  await showModal(
+    interaction,
+    "Change Wallet",
+    `change__wallet_modal_${id}`,
+    fieldOptions
+  );
+}
 module.exports = {
   handlePointsSetup,
   handleSocialRewards,
@@ -627,4 +816,61 @@ module.exports = {
   joinGiveaway,
   handleEditGiveaway,
   handleDeleteGiveaway,
+  handleAddAuction,
+  handleEditAuction,
+  handleDeleteAuction,
+  handleBidAuction,
+  handlePlaceBidAuction,
+  handleChangeWalletAuction,
+  handleFlipBag,
 };
+
+async function displayActiveAuctions(interaction, selectId) {
+  try {
+    // Fetch active auctions for the current guild
+    const auctions = await Auction.find({
+      status: "active",
+      guildId: interaction.guildId,
+    });
+
+    // If no active auctions found
+    if (auctions.length === 0) {
+      return interaction.reply({
+        content: "There are no active auctions at the moment.",
+        ephemeral: true,
+      });
+    }
+
+    // Map the auctions to create select menu options
+    const options = auctions.map((auction) => {
+      return {
+        label: `${auction.name} - ${auction.quantity} available`,
+        value: auction._id.toString(),
+        description: `Current bid: $${auction.currentBid}`,
+        emoji: "💰",
+      };
+    });
+
+    // Create the select menu
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId(selectId)
+      .setPlaceholder("Select an auction to view details")
+      .addOptions(options);
+
+    // Create the action row and add the select menu to it
+    const row = new ActionRowBuilder().addComponents(selectMenu);
+
+    // Send the reply with the select menu
+    await interaction.reply({
+      content: "Please select an auction:",
+      components: [row],
+      ephemeral: true,
+    });
+  } catch (error) {
+    console.error(error);
+    await interaction.reply({
+      content: "There was an error fetching the auctions.",
+      ephemeral: true,
+    });
+  }
+}

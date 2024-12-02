@@ -13,6 +13,9 @@ const sendSelectMenu = require("../selectMenuHandler");
 const Giveaway = require("../../models/raffles");
 const { updateGiveaway, generateItemEmbed } = require("../commons");
 const EmbedMessages = require("../../models/EmbedMessages");
+const Auction = require("../../models/Auction");
+const { placeBid } = require("../logics/bid");
+const User = require("../../models/Users");
 async function handleSocialRewardsSubmission(interaction) {
   const guildId = interaction.guildId;
   const fields = interaction.fields;
@@ -492,6 +495,300 @@ async function addRaffleOptionals(
   });
 }
 
+async function addAuctionModal(interaction) {
+  try {
+    const guildId = interaction.guildId;
+    const name = interaction.fields.getTextInputValue("item_name").trim();
+    const chain = interaction.fields.getTextInputValue("item_chain").trim();
+    const description =
+      interaction.fields.getTextInputValue("item_description")?.trim() || "";
+    const quantityInput = interaction.fields
+      .getTextInputValue("item_quantity")
+      .trim();
+    const durationInput = interaction.fields
+      .getTextInputValue("item_duration")
+      .trim();
+
+    // Validate name
+    if (!name || name.length < 3) {
+      return interaction.reply({
+        content: "❌ The item name must be at least 3 characters long.",
+        ephemeral: true,
+      });
+    }
+
+    // Validate chain
+    if (!chain || chain.length < 3) {
+      return interaction.reply({
+        content: "❌ The chain name must be at least 3 characters long.",
+        ephemeral: true,
+      });
+    }
+
+    // Validate quantity
+    const quantity = parseInt(quantityInput, 10);
+    if (isNaN(quantity) || quantity <= 0) {
+      return interaction.reply({
+        content: "❌ Quantity must be a valid number greater than 0.",
+        ephemeral: true,
+      });
+    }
+
+    // Validate and convert duration
+    const durationMs = ms(durationInput);
+    if (!durationMs) {
+      return interaction.reply({
+        content:
+          "❌ Duration must be a valid time string (e.g., '1 min', '10 hours').",
+        ephemeral: true,
+      });
+    }
+
+    const duration = new Date(Date.now() + durationMs);
+
+    // Create the auction document
+    const newAuction = new Auction({
+      guildId,
+      name,
+      chain,
+      description,
+      quantity,
+      duration,
+    });
+
+    // Saving the document to the database
+    await newAuction.save();
+
+    const roleSelect = new RoleSelectMenuBuilder()
+      .setCustomId(`add_auction_role_select_${newAuction._id}`)
+      .setPlaceholder(
+        "Select Select Role that will be given to the winner after winning auction"
+      )
+      .setMinValues(1)
+      .setMaxValues(1);
+
+    const row = new ActionRowBuilder().addComponents(roleSelect);
+    await interaction.reply({
+      content: "Please select your roles:",
+      components: [row],
+      ephemeral: true,
+    });
+  } catch (error) {
+    console.error("Error creating auction:", error);
+
+    // Inform the user about the error
+    await interaction.reply({
+      content: `An error occurred while creating the auction. Please try again later.`,
+      ephemeral: true,
+    });
+  }
+}
+
+async function editAuctionModal(interaction, id) {
+  const guildId = interaction.guildId;
+  const name = interaction.fields.getTextInputValue("item_name").trim();
+  const minimum_bid = interaction.fields
+    .getTextInputValue("minimum_bid")
+    .trim();
+  const description =
+    interaction.fields.getTextInputValue("item_description")?.trim() || "";
+  const quantityInput = interaction.fields
+    .getTextInputValue("item_quantity")
+    .trim();
+
+  if (!name || name.length < 3) {
+    return interaction.reply({
+      content: "Please provide a valid item name (at least 3 characters).",
+      ephemeral: true,
+    });
+  }
+
+  const quantity = parseInt(quantityInput, 10);
+  if (isNaN(quantity) || quantity < 1) {
+    return interaction.reply({
+      content: "Please provide a valid quantity (must be a positive integer).",
+      ephemeral: true,
+    });
+  }
+
+  const minBid = parseFloat(minimum_bid);
+  if (isNaN(minBid) || minBid < 0) {
+    return interaction.reply({
+      content:
+        "Please provide a valid minimum bid (must be a positive number).",
+      ephemeral: true,
+    });
+  }
+
+  if (description && description.length > 500) {
+    return interaction.reply({
+      content: "Description is too long. Please keep it under 500 characters.",
+      ephemeral: true,
+    });
+  }
+  console.log(id);
+  const auction = await Auction.findById(id);
+  auction.name = name;
+  auction.description = description;
+  auction.minimumBid = minBid;
+  auction.quantity = quantity;
+  auction.save();
+  await interaction.reply({
+    content: "Auction Edited Successfully.",
+    ephemeral: true,
+  });
+}
+
+async function handleBidAmountModal(interaction, id) {
+  const bid_amount = interaction.fields.getTextInputValue("bid_amount").trim();
+
+  const bid = parseInt(bid_amount, 10);
+  if (isNaN(bid) || bid <= 0) {
+    return interaction.reply({
+      content: "❌ bid must be a valid number greater than 0.",
+      ephemeral: true,
+    });
+  }
+
+  const result = await placeBid(
+    id,
+    interaction.user.id,
+    bid_amount,
+    interaction.guildId
+  );
+
+  if (result.success) {
+    await interaction.reply({
+      content: `Bid placed successfully!`,
+      ephemeral: true,
+    });
+    // Update auction embed
+    // ...
+  } else {
+    await interaction.reply({
+      content: `Failed to place bid: ${result.error}`,
+      ephemeral: true,
+    });
+  }
+}
+
+async function handleChangeWalletModal(interaction, id) {
+  const change_wallet = interaction.fields
+    .getTextInputValue("change_wallet")
+    .trim();
+  const userId = interaction.user.id;
+  const auction = await Auction.findById(id);
+
+  if (!auction) {
+    return interaction.reply("Auction not found.");
+  }
+
+  const userBid = auction.bidders.find((bidder) => bidder.userId === userId);
+
+  if (!userBid) {
+    return interaction.reply(
+      "You need to place a bid before changing your wallet address."
+    );
+  }
+  userBid.walletAddress = change_wallet;
+  await auction.save();
+
+  return interaction.reply(
+    `Your wallet address has been updated to: ${change_wallet}`
+  );
+}
+
+async function handleSocialSettingsModal(interaction) {
+  const x_account_handle = interaction.fields
+    .getTextInputValue("x_account_handle")
+    .trim();
+
+  // Get optional account handles. If the user hasn't provided them, they'll be null or empty.
+  const tg_account_handle =
+    interaction.fields.getTextInputValue("tg_account_handle").trim() || null;
+  const yt_account_handle =
+    interaction.fields.getTextInputValue("yt_account_handle").trim() || null;
+  const tiktok_account_handle =
+    interaction.fields.getTextInputValue("tiktok_account_handle").trim() ||
+    null;
+  const ig_account_handle =
+    interaction.fields.getTextInputValue("ig_account_handle").trim() || null;
+
+  // Get the user's Discord ID (this can be passed through interaction)
+  const discordId = interaction.user.id;
+
+  // Prepare the social media handles
+  const socials = {
+    x: x_account_handle, // Required
+    tg: tg_account_handle, // Optional
+    yt: yt_account_handle, // Optional
+    tiktok: tiktok_account_handle, // Optional
+    ig: ig_account_handle, // Optional
+  };
+
+  try {
+    // Check if the user exists in the database
+    let user = await User.findOne({ discordId });
+
+    if (!user) {
+      // User doesn't exist, create a new user with the provided social handles
+      user = new User({
+        discordId,
+        socials,
+        status: "active", // Default status or customize as needed
+      });
+
+      // Optionally, you can set walletAddress and hyperBlockPoints here
+      // user.walletAddress = someAddress;
+      // user.hyperBlockPoints = 0;
+    } else {
+      // User exists, update the socials field, ensuring only non-null values are set
+      user.socials = socials;
+    }
+
+    // Save the user
+    await user.save();
+
+    // Respond to the interaction
+    await interaction.reply({
+      content: "Your social media handles have been updated!",
+      ephemeral: true,
+    });
+  } catch (error) {
+    console.error("Error handling social settings:", error);
+    await interaction.reply({
+      content:
+        "There was an error updating your social media handles. Please try again later.",
+      ephemeral: true,
+    });
+  }
+}
+async function handleMintWalletModals(interaction, itemId) {
+  const userId = interaction.user.id;
+
+  const wallet_address =
+    interaction.fields.getTextInputValue("wallet_address").trim() || null;
+  console.log(wallet_address);
+
+  let user = await User.findOne({ discordId: userId });
+
+  if (!user) {
+    user = new userSchema({
+      discordId: userId,
+      status: "active",
+      mintWallets: {},
+    });
+  }
+
+  user.mintWallets[itemId] = wallet_address;
+
+  await user.save();
+
+  return interaction.reply({
+    content: `Successfully added your ${itemId} wallet address!`,
+    ephemeral: true,
+  });
+}
 module.exports = {
   handleSocialSetupSubmission,
   handleSocialRewardsSubmission,
@@ -501,4 +798,10 @@ module.exports = {
   handleEditItemModelSubmission,
   handleAddRaffle,
   addRaffleOptionals,
+  addAuctionModal,
+  editAuctionModal,
+  handleBidAmountModal,
+  handleChangeWalletModal,
+  handleSocialSettingsModal,
+  handleMintWalletModals,
 };

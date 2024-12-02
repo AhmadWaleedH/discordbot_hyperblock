@@ -5,8 +5,15 @@ const shopItem = require("../../models/Shop");
 const sendEmbedWithButtons = require("../../utils/embeds/embedWithButtons");
 
 const embedOptions = {
-  title: "Welcome to the Server!",
-  description: "Here's how you can get started with the server setup:",
+  title: "Shop System",
+  description: "Here's how you can get started with adding/removing shop items",
+  color: "#00ff99",
+};
+
+const ausctionEmbedOptions = {
+  title: "Auction System",
+  description:
+    "Here's how you can get started with the adding/removing auction:",
   color: "#00ff99",
 };
 
@@ -49,6 +56,33 @@ const buttonOptions = [
     emoji: "👥",
     style: ButtonStyle.Secondary,
     customId: "team_setup",
+  },
+];
+
+const auctionOptions = [
+  {
+    label: "Add Item",
+    emoji: "🎯",
+    style: ButtonStyle.Success,
+    customId: "add_auction",
+  },
+  {
+    label: "Edit Item",
+    emoji: "🌐",
+    style: ButtonStyle.Primary,
+    customId: "edit_auction",
+  },
+  {
+    label: "Bid",
+    emoji: "👥",
+    style: ButtonStyle.Secondary,
+    customId: "bid_auction",
+  },
+  {
+    label: "Delete",
+    emoji: "🚨",
+    style: ButtonStyle.Danger,
+    customId: "delete_auction",
   },
 ];
 
@@ -148,8 +182,15 @@ module.exports = {
     await sendEmbedWithButtons(
       guild,
       hypeMarketChannelId,
-      itemsEmbedOptions,
+      embedOptions,
       itemsButtonsOptions
+    );
+
+    await sendEmbedWithButtons(
+      guild,
+      hypeMarketChannelId,
+      ausctionEmbedOptions,
+      auctionOptions
     );
     await interaction.editReply({
       content: "Setup complete ✅",

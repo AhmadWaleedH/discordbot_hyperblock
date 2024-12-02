@@ -80,6 +80,40 @@ module.exports = async (client, interaction) => {
       await buttonActions.handleDeleteGiveaway(interaction);
       break;
 
+    // delete leaderboard ✅ - add auction ⏳
+    case customId === "add_auction":
+      await buttonActions.handleAddAuction(interaction);
+      break;
+    // add auction ✅ - edit auction ⏳
+    case customId === "edit_auction":
+      await buttonActions.handleEditAuction(interaction);
+      break;
+
+    // edit auction ✅ - delete auction ⏳
+    case customId === "delete_auction":
+      await buttonActions.handleDeleteAuction(interaction);
+      break;
+
+    // delete auction ✅ - bid auction ⏳
+    case customId === "bid_auction":
+      await buttonActions.handleBidAuction(interaction);
+      break;
+
+    case customId.startsWith("place_bid_"): {
+      const itemId = customId.split("place_bid_")[1];
+      await buttonActions.handlePlaceBidAuction(interaction, itemId);
+      break;
+    }
+
+    case customId.startsWith("change_wallet_"): {
+      const itemId = customId.split("change_wallet_")[1];
+      await buttonActions.handleChangeWalletAuction(interaction, itemId);
+      break;
+    }
+
+    case customId === "flip":
+      await buttonActions.handleFlipBag(interaction);
+      break;
     default:
       console.log("Unknown button action:", interaction.customId);
       break;

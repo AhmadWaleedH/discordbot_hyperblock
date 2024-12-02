@@ -1,6 +1,7 @@
 const Giveaway = require("../models/raffles"); // Adjust the path to your model
 const Users = require("../models/Users");
 const ShopItem = require("../models/Shop");
+const mongoose = require("mongoose");
 const {
   EmbedBuilder,
   ButtonBuilder,

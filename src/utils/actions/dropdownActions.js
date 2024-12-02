@@ -17,12 +17,15 @@ const {
   generateItemEmbed,
 } = require("../commons");
 const Giveaway = require("../../models/raffles");
+const User = require("../../models/Users");
 const moment = require("moment");
 const {
   createGiveawayEmbed,
   editGiveawayMessage,
 } = require("../embeds/giveawayEmbed");
 const EmbedMessages = require("../../models/EmbedMessages");
+const Auction = require("../../models/Auction");
+const sendEmbedWithButtons = require("../embeds/embedWithButtons");
 async function teamSetupAdminRole(interaction) {
   const roleIds = interaction.values;
   const guildId = interaction.guildId;
@@ -870,6 +873,241 @@ async function deleteRaffleDropdown(interaction) {
     await interaction.reply("failed to delete the selected Giveaway!");
   }
 }
+
+async function addAuctionRoleDropdown(interaction, itemId) {
+  const selectedRoleId = interaction.values[0];
+  const auction = await Auction.findById(itemId);
+  auction.roleForWinner = selectedRoleId;
+  auction.save();
+
+  const options = [
+    {
+      label: "Run",
+      description: "Just save the auction and send it into the channel.",
+      value: "run",
+    },
+    {
+      label: "Minimum Bid",
+      description: "Minimum Points required to bid.",
+      value: "minimum_bid",
+    },
+    {
+      label: "Blind Auction",
+      description: "All Bids will be Hidden",
+      value: "blind_auction",
+    },
+  ];
+  await sendSelectMenu(
+    interaction,
+    "Choose your Optional States!",
+    `add_optional_auction_select`,
+    "Make a selection!",
+    options
+  );
+
+  const filter = (interaction) => {
+    return interaction.customId.startsWith("add_optional_auction_select");
+  };
+  const collector = interaction.channel.createMessageComponentCollector({
+    filter,
+    time: 60000,
+  });
+  collector.on("collect", async (selectInteraction) => {
+    try {
+      const selectedValue = selectInteraction.values[0];
+      if (selectedValue === "run") {
+        await selectInteraction.reply({
+          content: "New Auction Created Successfully!",
+          ephemeral: true,
+        });
+      } else {
+        const modalConfigs = {
+          minimum_bid: {
+            title: "Add Minimum Bids",
+            customId: "minimum_bid",
+            fieldOptions: [
+              {
+                label: "Minimum Bid",
+                customId: "minimum_bid",
+                placeholder: "Enter No Of Winners",
+                style: "Short",
+              },
+            ],
+          },
+          blind_auction: {
+            title: "Blind Auction (yes/no)",
+            customId: "blind_auction",
+            fieldOptions: [
+              {
+                label: "Blind Auction",
+                customId: "blind_auction",
+                placeholder: "Enter Chain project",
+                style: "Short",
+              },
+            ],
+          },
+        };
+        const modalConfig = modalConfigs[selectedValue];
+
+        await showModal(
+          selectInteraction,
+          modalConfig.title,
+          modalConfig.customId,
+          modalConfig.fieldOptions
+        );
+
+        try {
+          const filter = (i) => {
+            return (
+              i.customId === modalConfig.customId &&
+              i.user.id === selectInteraction.user.id
+            );
+          };
+          const submitted = await selectInteraction.awaitModalSubmit({
+            filter,
+            time: 600000,
+          });
+          if (submitted) {
+            const submittedFields = submitted.fields.fields;
+            console.log(submittedFields);
+            switch (selectedValue) {
+              case "minimum_bid":
+                auction.minimumBid = Number(
+                  submittedFields.get("minimum_bid").value
+                );
+                auction.save();
+                break;
+              case "blind_auction":
+                const blind_auction =
+                  submittedFields.get("blind_auction").value;
+                auction.blindAuction = blind_auction.toLowerCase() === "yes";
+                auction.save();
+                break;
+            }
+            await submitted.reply({
+              content: `Successfully updated ${modalConfig.title.toLowerCase()}!`,
+              ephemeral: true,
+            });
+          }
+        } catch (error) {
+          console.error("Error handling modal submission:", error);
+          await selectInteraction.followUp({
+            content: "Failed to process modal submission or timeout occurred.",
+            ephemeral: true,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error handling select menu:", error);
+    }
+  });
+  collector.on("end", (collected) => {
+    if (collected.size === 0) {
+      console.log("No selection was made within the time limit");
+      // Optionally handle timeout
+      interaction
+        .followUp({
+          content: "You did not make a selection in time!",
+          ephemeral: true,
+        })
+        .catch(console.error);
+    }
+  });
+}
+
+async function editAuctionSelect(interaction) {
+  const id = interaction.values[0];
+  console.log(id);
+  const auction = await Auction.findById(id);
+
+  const fieldOptions = [
+    {
+      label: "Item Name",
+      customId: "item_name",
+      placeholder: "Enter Item Name",
+      value: auction.name,
+      style: "Short",
+    },
+    {
+      label: "Item Description",
+      customId: "item_description",
+      placeholder: "Enter Item Description",
+      value: auction.description,
+      style: "Short",
+    },
+    {
+      label: "Item Quantity",
+      customId: "item_quantity",
+      placeholder: "Enter Item Quantity",
+      value: auction.quantity.toString(),
+      style: "Short",
+    },
+    {
+      label: "Minimum Bid",
+      customId: "minimum_bid",
+      placeholder: "Enter Minimum Bid",
+      value: auction.minimumBid.toString(),
+      style: "Short",
+    },
+  ];
+
+  await showModal(
+    interaction,
+    `Edit Auction Item`,
+    `edit_auction_modal_${auction._id}`,
+    fieldOptions
+  );
+}
+
+async function deleteAuctionSelect(interaction) {
+  const id = interaction.values[0];
+  await Auction.findByIdAndDelete(id);
+  await interaction.reply({
+    content: "Auction Deleted Successfully",
+    ephemeral: true,
+  });
+}
+
+async function bidAuctionSelect(interaction) {
+  const selectedId = interaction.values[0];
+  const auction = await Auction.findById(selectedId);
+  console.log(auction);
+  const { embed, row } = createAuctionEmbed(auction);
+  interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+}
+
+async function mintWalletSelect(interaction) {
+  const selectedOptions = interaction.values[0];
+  const userId = interaction.user.id;
+
+  // Fetch user data from the database
+  const user = await User.findOne({ discordId: userId });
+
+  if (!user) {
+    return interaction.reply({
+      content: "User data not found. Please try again later.",
+      ephemeral: true,
+    });
+  }
+  const address = user.mintWallets[selectedOptions];
+  const fieldOptions = [
+    {
+      label: `Enter ${selectedOptions} Wallet Address`,
+      customId: "wallet_address",
+      placeholder: `Enter ${selectedOptions} Wallet Address`,
+      style: "Short",
+      ...(address ? { value: address } : {}),
+    },
+  ];
+
+  await showModal(
+    interaction,
+    " Setup Configuration",
+    `mint_wallet_modal_${selectedOptions}`,
+    fieldOptions
+  );
+}
+
 module.exports = {
   teamSetupAdminRole,
   pointsSetupAdminRole,
@@ -884,4 +1122,87 @@ module.exports = {
   addRaffleOptionalsDb,
   editRaffleDropdown,
   deleteRaffleDropdown,
+  addAuctionRoleDropdown,
+  editAuctionSelect,
+  deleteAuctionSelect,
+  bidAuctionSelect,
+  mintWalletSelect,
 };
+
+function createAuctionEmbed(auction) {
+  // Calculate time remaining
+  // const timeRemaining = auction.duration - new Date();
+  // const daysRemaining = Math.ceil(timeRemaining / (1000 * 60 * 60 * 24));
+  const endTimeUnix = Math.floor(new Date(auction.duration).getTime() / 1000);
+
+  // Calculate time remaining
+  // const timeLeft = new Date(giveaway.endTime) - new Date();
+  // Create the embed
+  const embed = new EmbedBuilder()
+    .setTitle("Super")
+    .setDescription(
+      `New ${auction.chain} Auction is live! Click Below To Place Your Bid.\nThere Will Be ${auction.quantity} Spot(s) In This Auction.`
+    )
+    .setColor("#0099ff")
+    .addFields(
+      {
+        name: "Ends",
+        value: `<t:${endTimeUnix}:R>`,
+        inline: true,
+      },
+      {
+        name: "Highest Bidder",
+        value: auction.currentBidder ? `<@${auction.currentBidder}>` : "-",
+        inline: true,
+      },
+      {
+        name: "Value",
+        value: auction.currentBid ? `${auction.currentBid}` : "-",
+        inline: true,
+      }
+    );
+
+  // Add bids section
+  if (auction.bidders && auction.bidders.length > 0) {
+    const bidsField = auction.bidders
+      .sort((a, b) => b.bidAmount - a.bidAmount)
+      .slice(0, 6) // Show top 6 bids
+      .map((bid) => `<@${bid.userId}> - ${bid.bidAmount}`)
+      .join("\n");
+
+    embed.addFields({
+      name: "Bids",
+      value: bidsField || "-",
+    });
+  } else {
+    // Add empty bid placeholders like in the image
+    embed.addFields({
+      name: "Bids",
+      value: Array(6).fill("-").join("\n"),
+    });
+  }
+
+  // Create buttons
+  const bidButton = new ButtonBuilder()
+    .setCustomId(`place_bid_${auction._id}`)
+    .setLabel("Bid")
+    .setStyle(ButtonStyle.Primary)
+    .setEmoji("💰");
+
+  const changeWalletButton = new ButtonBuilder()
+    .setCustomId(`change_wallet_${auction._id}`)
+    .setLabel("Change Wallet")
+    .setStyle(ButtonStyle.Secondary)
+    .setEmoji("🔄");
+
+  // Create action row with buttons
+  const row = new ActionRowBuilder().addComponents(
+    bidButton,
+    changeWalletButton
+  );
+
+  return {
+    embed,
+    row,
+  };
+}
