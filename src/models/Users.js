@@ -7,7 +7,7 @@ const userSchema = new Schema({
   hyperBlockPoints: { type: Number },
   status: { type: String, enum: ["active", "inactive", "banned"] },
   socials: {
-    x: { type: String, required: true }, // x is required
+    x: { type: String }, // x is required
     tg: { type: String }, // Optional
     yt: { type: String }, // Optional
     tiktok: { type: String }, // Optional
