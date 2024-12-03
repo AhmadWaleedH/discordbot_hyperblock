@@ -82,7 +82,7 @@ client.on("messageCreate", async (message) => {
       user.lastActive = new Date();
 
       // Optionally notify user about points earned (uncomment if needed)
-      // message.reply(`You earned ${points} points!`);
+      await message.reply(`You earned ${points} points!`);
     }
 
     // Save user changes
