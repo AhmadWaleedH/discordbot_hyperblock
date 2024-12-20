@@ -1317,7 +1317,6 @@ async function createContestThread(interaction, contest) {
         // Update the permissions of the channel to restrict non-role users
         await newChannel.permissionOverwrites.edit(interaction.guild.id, {
           // Deny send messages for everyone in the guild
-          [PermissionsBitField.Flags.ViewChannel]: false,
           [PermissionsBitField.Flags.SendMessages]: false,
         });
 
