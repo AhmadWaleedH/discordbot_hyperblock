@@ -866,7 +866,7 @@ async function handleFunContestBtn(interaction) {
     {
       label: "Number of winners",
       customId: "winners_contest",
-      placeholder: "Enter points for Space",
+      placeholder: "Enter Number of Winners",
       style: "Short",
       required: true,
     },
