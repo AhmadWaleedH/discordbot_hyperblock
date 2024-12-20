@@ -4,6 +4,8 @@ const {
   EmbedBuilder,
   ButtonBuilder,
   ButtonStyle,
+  ChannelType,
+  PermissionsBitField,
 } = require("discord.js");
 const Guilds = require("../../models/Guilds");
 const ShopItem = require("../../models/Shop");
@@ -26,6 +28,8 @@ const {
 const EmbedMessages = require("../../models/EmbedMessages");
 const Auction = require("../../models/Auction");
 const sendEmbedWithButtons = require("../embeds/embedWithButtons");
+const Contest = require("../../models/Contests");
+const { generateContestEmbed } = require("../embeds/contestEmbed");
 async function teamSetupAdminRole(interaction) {
   const roleIds = interaction.values;
   const guildId = interaction.guildId;
@@ -1108,6 +1112,25 @@ async function mintWalletSelect(interaction) {
   );
 }
 
+async function contestCreationSelect(interaction, id) {
+  const selectedId = interaction.values[0];
+
+  // Find the contest from the database
+  const contest = await Contest.findById(id);
+
+  // Save the selected role to the contest document
+  contest.roleAssignedToParticipant = selectedId;
+  await contest.save();
+
+  // Now start collecting the points for the winners
+  await interaction.reply({
+    content: `Role assigned successfully! Now, let's collect points for the winners. You have ${contest.numberOfWinners} winners to provide points for.`,
+    ephemeral: true,
+  });
+
+  // Call the function to collect the points for winners
+  await collectPointsForWinners(interaction, contest);
+}
 module.exports = {
   teamSetupAdminRole,
   pointsSetupAdminRole,
@@ -1127,6 +1150,7 @@ module.exports = {
   deleteAuctionSelect,
   bidAuctionSelect,
   mintWalletSelect,
+  contestCreationSelect,
 };
 
 function createAuctionEmbed(auction) {
@@ -1205,4 +1229,151 @@ function createAuctionEmbed(auction) {
     embed,
     row,
   };
+}
+
+async function collectPointsForWinners(interaction, contest) {
+  const winnerCount = contest.numberOfWinners;
+  const pointsForWinners = [];
+
+  // Start the message collector to collect points for each winner
+  const filter = (response) => response.author.id === interaction.user.id;
+  const collector = interaction.channel.createMessageCollector({
+    filter,
+    time: 60000, // 1 minute timeout for each message
+    max: winnerCount, // Limit to the number of winners
+  });
+
+  // Notify the user to start entering points
+  await interaction.followUp({
+    content: `Please provide the points for the 1st place winner:`,
+    ephemeral: true,
+  });
+
+  let winnerIndex = 1;
+
+  collector.on("collect", async (collected) => {
+    // Parse the input points
+    const points = parseInt(collected.content);
+
+    if (isNaN(points) || points <= 0) {
+      await interaction.followUp({
+        content: "Please enter a valid number of points greater than 0.",
+        ephemeral: true,
+      });
+      return; // Skip invalid input
+    }
+
+    // Save the points for the current winner
+    pointsForWinners.push(points);
+
+    // If we have collected all the points for the winners, save them and end the collection
+    if (pointsForWinners.length === winnerCount) {
+      contest.pointsForWinners = pointsForWinners;
+      await contest.save();
+
+      await createContestThread(interaction, contest);
+
+      collector.stop(); // Stop collecting after all points are gathered
+    } else {
+      // Ask for points for the next winner
+      await interaction.followUp({
+        content: `Please provide the points for the ${
+          winnerIndex + 1
+        }th place winner:`,
+        ephemeral: true,
+      });
+    }
+
+    winnerIndex++;
+  });
+
+  collector.on("end", (collected, reason) => {
+    if (reason === "time") {
+      interaction.followUp({
+        content: "You took too long to respond. Please try again.",
+        ephemeral: true,
+      });
+    }
+  });
+}
+
+async function createContestThread(interaction, contest) {
+  try {
+    const newChannel = await interaction.guild.channels.create({
+      name: contest.title,
+      type: 0, // '0' represents a text channel
+      reason: `Contest created for ${contest.title}`,
+    });
+
+    contest.channelId = newChannel.id;
+    await contest.save();
+    const roleId = contest.roleAssignedToParticipant;
+
+    if (roleId) {
+      // Fetch the role by its ID
+      const role = await interaction.guild.roles.fetch(roleId);
+
+      if (role) {
+        // Update the permissions of the channel to restrict non-role users
+        await newChannel.permissionOverwrites.edit(interaction.guild.id, {
+          // Deny send messages for everyone in the guild
+          [PermissionsBitField.Flags.ViewChannel]: false,
+          [PermissionsBitField.Flags.SendMessages]: false,
+        });
+
+        await newChannel.permissionOverwrites.edit(role.id, {
+          // Allow send messages for the specific role
+          [PermissionsBitField.Flags.ViewChannel]: true,
+          [PermissionsBitField.Flags.SendMessages]: true,
+        });
+      } else {
+        console.error("Role not found.");
+      }
+    } else {
+      console.log("No role assigned to participants.");
+    }
+    const timeRemaining = contest.duration - new Date();
+    const formattedDuration = ms(timeRemaining, { long: true });
+
+    // Buttons for Join and Result
+    const joinButton = new ButtonBuilder()
+      .setCustomId(`join_${contest._id}`)
+      .setLabel("Join")
+      .setStyle("Primary");
+
+    const buttonRow = new ActionRowBuilder().addComponents(joinButton);
+
+    // Send the embed and buttons to the newly created channel
+    const savedChannel = await newChannel.send({
+      content: `Welcome to the contest: **${contest.title}**! Please review the details below and choose your action.`,
+      embeds: [generateContestEmbed(contest)],
+      components: [buttonRow],
+    });
+
+    const embedMessage = new EmbedMessages({
+      itemId: contest._id, // Save the contest ID (use contest._id to reference the contest)
+      guildId: savedChannel.guild.id, // Save the guild ID (for context)
+      channelId: savedChannel.channel.id, // Save the channel ID (where the message was sent)
+      messageId: savedChannel.id, // Save the message ID (to easily edit the embed later)
+    });
+
+    // Save the document
+    await embedMessage.save();
+
+    contest.isActive = true;
+    await contest.save();
+
+    // Inform the user that the channel was created
+    await interaction.followUp({
+      content: `A channel for the contest "${contest.title}" has been created!`,
+      ephemeral: true,
+    });
+  } catch (error) {
+    console.error("Error creating thread:", error);
+    await interaction.followUp({
+      content:
+        "There was an error creating the contest thread. Please try again later.",
+      ephemeral: true,
+    });
+  }
 }

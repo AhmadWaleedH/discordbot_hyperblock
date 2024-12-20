@@ -114,6 +114,11 @@ module.exports = async (client, interaction) => {
       await modelActions.handleMintWalletModals(interaction, itemId);
       break;
     }
+
+    case customId === "contest_creation_modal":
+      await modelActions.handleContestCreationModal(interaction);
+      break;
+
     default:
       console.log("Unknown modal submission:", interaction.customId);
       break;

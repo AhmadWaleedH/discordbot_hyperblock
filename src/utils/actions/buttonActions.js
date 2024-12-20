@@ -19,6 +19,35 @@ const User = require("../../models/Users");
 const { handlePurchase } = require("../commons");
 const Auction = require("../../models/Auction");
 const { createCreditCardBackImage } = require("../canvas/back");
+const Contest = require("../../models/Contests");
+
+const buttonOptions = [
+  {
+    label: "Fanart",
+    emoji: "➕",
+    style: ButtonStyle.Success,
+    customId: "fanart_fun",
+  },
+  {
+    label: "Meme",
+    emoji: "🖊️",
+    style: ButtonStyle.Primary,
+    customId: "meme_fun",
+  },
+  {
+    label: "Community Fun",
+    emoji: "👨",
+    style: ButtonStyle.Primary,
+    customId: "community_fun",
+  },
+];
+
+const embedOptions = {
+  title: "Contest Panel Configuration is here",
+  description: "Here's how you can get started with Contests:",
+  color: "#00ff99",
+};
+
 const ITEM_EMOJIS = {
   weapon: "⚔️",
   armor: "🛡️",
@@ -801,6 +830,116 @@ async function handleChangeWalletAuction(interaction, id) {
     fieldOptions
   );
 }
+
+async function handleContestButton(interaction) {
+  try {
+    const guild = interaction.guild;
+
+    await interaction.reply("Events are here :");
+    await sendEmbedWithButtons(
+      guild,
+      interaction.channelId,
+      embedOptions,
+      buttonOptions
+    );
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+async function handleFunContestBtn(interaction) {
+  const fieldOptions = [
+    {
+      label: "Title of the Contest",
+      customId: "title_contest",
+      placeholder: "Enter Title of the contest",
+      style: "Short",
+      required: true,
+    },
+    {
+      label: "Duration Time to Submit (1 hour, 3 days, etc)",
+      customId: "duation_contest",
+      placeholder: "Enter Duration of the contest",
+      style: "Short",
+      required: true,
+    },
+    {
+      label: "Number of winners",
+      customId: "winners_contest",
+      placeholder: "Enter points for Space",
+      style: "Short",
+      required: true,
+    },
+    {
+      label: "Description about event",
+      customId: "description_event",
+      placeholder: "Enter Description for the Event",
+      style: "Short",
+      required: true,
+    },
+    {
+      label: "Points for Participants",
+      customId: "points_contest",
+      placeholder: "Enter Points",
+      style: "Short",
+      required: true,
+    },
+  ];
+
+  await showModal(
+    interaction,
+    "Contest Creation",
+    "contest_creation_modal",
+    fieldOptions
+  );
+}
+
+async function handleJoinContest(interaction, itemId) {
+  try {
+    // Step 1: Fetch the contest from the database using itemId (contest._id)
+    const contest = await Contest.findById(itemId);
+    if (!contest) {
+      return interaction.reply({
+        content: "Contest not found.",
+        ephemeral: true,
+      });
+    }
+
+    // Step 2: Get the role ID assigned to participants in the contest
+    const roleId = contest.roleAssignedToParticipant;
+    if (!roleId) {
+      return interaction.reply({
+        content: "No role assigned to participants in this contest.",
+        ephemeral: true,
+      });
+    }
+
+    // Step 3: Get the role object from the guild
+    const role = await interaction.guild.roles.fetch(roleId);
+    if (!role) {
+      return interaction.reply({
+        content: "Role not found in the guild.",
+        ephemeral: true,
+      });
+    }
+
+    // Step 4: Assign the role to the user who clicked the button
+    await interaction.member.roles.add(role);
+
+    // Step 5: Send confirmation message to the user
+    return interaction.reply({
+      content: `You have successfully joined the contest **${contest.title}**! Good luck!`,
+      ephemeral: true,
+    });
+  } catch (error) {
+    console.error("Error handling join contest:", error);
+    return interaction.reply({
+      content:
+        "An error occurred while processing your request. Please try again later.",
+      ephemeral: true,
+    });
+  }
+}
 module.exports = {
   handlePointsSetup,
   handleSocialRewards,
@@ -823,6 +962,9 @@ module.exports = {
   handlePlaceBidAuction,
   handleChangeWalletAuction,
   handleFlipBag,
+  handleContestButton,
+  handleFunContestBtn,
+  handleJoinContest,
 };
 
 async function displayActiveAuctions(interaction, selectId) {

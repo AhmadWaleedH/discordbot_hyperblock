@@ -16,6 +16,7 @@ const EmbedMessages = require("../../models/EmbedMessages");
 const Auction = require("../../models/Auction");
 const { placeBid } = require("../logics/bid");
 const User = require("../../models/Users");
+const Contest = require("../../models/Contests");
 async function handleSocialRewardsSubmission(interaction) {
   const guildId = interaction.guildId;
   const fields = interaction.fields;
@@ -789,6 +790,70 @@ async function handleMintWalletModals(interaction, itemId) {
     ephemeral: true,
   });
 }
+
+async function handleContestCreationModal(interaction) {
+  const title = interaction.fields.getTextInputValue("title_contest");
+  const duration = interaction.fields.getTextInputValue("duation_contest");
+  const winners = interaction.fields.getTextInputValue("winners_contest");
+  const description = interaction.fields.getTextInputValue("description_event");
+  const points = interaction.fields.getTextInputValue("points_contest");
+
+  if (!title || !duration || !winners || !description) {
+    return await interaction.reply({
+      content: "All fields are required!",
+      ephemeral: true,
+    });
+  }
+
+  const durationMs = ms(duration);
+
+  if (!durationMs) {
+    return await interaction.reply({
+      content:
+        "The duration must be in a valid format like '2 hours', '3 days', etc.",
+      ephemeral: true,
+    });
+  }
+
+  if (isNaN(winners) || parseInt(winners) < 1) {
+    return await interaction.reply({
+      content: "Number of winners must be a valid number and at least 1.",
+      ephemeral: true,
+    });
+  }
+
+  if (isNaN(points) || parseInt(points) < 1) {
+    return await interaction.reply({
+      content: "points of particpans must be a valid number and at least 1.",
+      ephemeral: true,
+    });
+  }
+
+  const endTime = new Date(Date.now() + durationMs);
+  const contest = new Contest({
+    guildId: interaction.guild.id,
+    title,
+    duration: endTime,
+    numberOfWinners: parseInt(winners),
+    description,
+    pointsForParticipants: parseInt(points),
+  });
+
+  await contest.save();
+  const roleSelect = new RoleSelectMenuBuilder()
+    .setCustomId(`contest_creation_select_${contest._id}`)
+    .setPlaceholder("Select roles")
+    .setMinValues(1)
+    .setMaxValues(1);
+
+  const row = new ActionRowBuilder().addComponents(roleSelect);
+  await interaction.reply({
+    content:
+      "Please Select the role that will be assigned to user in the event:",
+    components: [row],
+    ephemeral: true,
+  });
+}
 module.exports = {
   handleSocialSetupSubmission,
   handleSocialRewardsSubmission,
@@ -804,4 +869,5 @@ module.exports = {
   handleChangeWalletModal,
   handleSocialSettingsModal,
   handleMintWalletModals,
+  handleContestCreationModal,
 };

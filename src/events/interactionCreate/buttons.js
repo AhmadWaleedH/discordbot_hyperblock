@@ -105,15 +105,34 @@ module.exports = async (client, interaction) => {
       break;
     }
 
+    // bid auction ✅ - Change wallet ⏳
+
     case customId.startsWith("change_wallet_"): {
       const itemId = customId.split("change_wallet_")[1];
       await buttonActions.handleChangeWalletAuction(interaction, itemId);
       break;
     }
-
+    // Change wallet ✅ - Flip ⏳
     case customId === "flip":
       await buttonActions.handleFlipBag(interaction);
       break;
+
+    // Flip ✅ - Contest button ⏳
+
+    case customId === "contests_btn":
+      await buttonActions.handleContestButton(interaction);
+      break;
+
+    case customId === "fanart_fun":
+      await buttonActions.handleFunContestBtn(interaction);
+      break;
+
+    case customId.startsWith("join_"): {
+      const itemId = customId.split("join_")[1];
+      await buttonActions.handleJoinContest(interaction, itemId);
+      break;
+    }
+
     default:
       console.log("Unknown button action:", interaction.customId);
       break;

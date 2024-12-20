@@ -114,6 +114,16 @@ module.exports = async (client, interaction) => {
       await dropdownActions.mintWalletSelect(interaction);
       break;
 
+    case customId === "contest_creation_select":
+      await dropdownActions.contestCreationSelect(interaction);
+      break;
+
+    case customId.startsWith("contest_creation_select_"): {
+      const itemId = customId.split("contest_creation_select_")[1];
+      await dropdownActions.contestCreationSelect(interaction, itemId);
+      break;
+    }
+
     default:
       console.log("Unknown modal submission:", interaction.customId);
       break;
