@@ -42,6 +42,12 @@ module.exports = async (client, interaction) => {
       break;
     }
 
+    case customId.startsWith("add_giveaway_time_"): {
+      const itemId = customId.split("add_giveaway_time_")[1];
+      await modelActions.addGiveawayTimer(interaction, itemId);
+      break;
+    }
+
     case customId.startsWith("add_raffle_twitter_"): {
       const itemId = customId.split("add_raffle_twitter_")[1];
       await modelActions.addRaffleOptionals(

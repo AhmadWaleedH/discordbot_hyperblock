@@ -5,6 +5,7 @@ const {
   ButtonStyle,
   ButtonBuilder,
 } = require("discord.js");
+const { parse, isValid, format } = require("date-fns");
 const Guilds = require("../../models/Guilds");
 const ShopItem = require("../../models/Shop");
 const ms = require("ms");
@@ -17,6 +18,7 @@ const Auction = require("../../models/Auction");
 const { placeBid } = require("../logics/bid");
 const User = require("../../models/Users");
 const Contest = require("../../models/Contests");
+const { createGiveawayEmbed } = require("../embeds/giveawayEmbed");
 async function handleSocialRewardsSubmission(interaction) {
   const guildId = interaction.guildId;
   const fields = interaction.fields;
@@ -373,10 +375,6 @@ async function handleAddRaffle(interaction) {
     interaction.fields.getTextInputValue("num_of_winners") || 1
   );
   const entryCost = Number(interaction.fields.getTextInputValue("entry_cost"));
-  const durationTime = interaction.fields.getTextInputValue("duration_time");
-  const endTime = new Date(
-    Date.now() + ms(interaction.fields.getTextInputValue("duration_time"))
-  );
   const chain = interaction.fields.getTextInputValue("chain_project");
   if (!raffleTitle || raffleTitle.trim() === "") {
     return interaction.reply({
@@ -399,14 +397,6 @@ async function handleAddRaffle(interaction) {
     });
   }
 
-  if (!durationTime || isNaN(ms(durationTime))) {
-    return interaction.reply({
-      content:
-        "❌ Please provide a valid duration time (e.g., '1 hour', '30 minutes').",
-      ephemeral: true,
-    });
-  }
-
   if (!chain || chain.trim() === "") {
     return interaction.reply({
       content: "❌ Please provide a valid chain project.",
@@ -418,7 +408,6 @@ async function handleAddRaffle(interaction) {
     raffleTitle: raffleTitle,
     numWinners: numWinners,
     entryCost: entryCost,
-    endTime: endTime,
     chain: chain,
   });
   giveaway
@@ -475,6 +464,124 @@ async function handleAddRaffle(interaction) {
     "Make a selection!",
     options
   );
+}
+
+async function addGiveawayTimer(interaction, id) {
+  const doc = await Guilds.findOne({ guildId: interaction.guildId });
+  const raffleChannelId = doc.botConfig.channels.raffles;
+
+  const isValidDate = (date) => {
+    const regex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/; // DD/MM/YYYY
+    return regex.test(date);
+  };
+
+  const isValidTime = (time) => {
+    const regex = /^(0?[1-9]|1[0-2]):([0-5][0-9])\s(AM|PM)$/i;
+    return regex.test(time);
+  };
+
+  // Get the values entered by the user
+  const startDate = interaction.fields.getTextInputValue("giveaway_start_date");
+  const startTime = interaction.fields.getTextInputValue("giveaway_start_time");
+  const endDate = interaction.fields.getTextInputValue("giveaway_end_date");
+  const endTime = interaction.fields.getTextInputValue("giveaway_end_time");
+  if (!isValidDate(startDate)) {
+    return interaction.reply({
+      content: "Invalid start date. Please use the format DD/MM/YYYY.",
+      ephemeral: true,
+    });
+  }
+
+  if (!isValidTime(startTime)) {
+    return interaction.reply({
+      content: "Invalid start time. Please use the format HH:MM AM/PM.",
+      ephemeral: true,
+    });
+  }
+
+  if (!isValidDate(endDate)) {
+    return interaction.reply({
+      content: "Invalid end date. Please use the format DD/MM/YYYY.",
+      ephemeral: true,
+    });
+  }
+
+  if (!isValidTime(endTime)) {
+    return interaction.reply({
+      content: "Invalid end time. Please use the format HH:MM AM/PM.",
+      ephemeral: true,
+    });
+  }
+
+  const parseDateTime = (dateStr, timeStr) => {
+    const dateTimeStr = `${dateStr} ${timeStr}`;
+    console.log(dateTimeStr);
+    // Parse the date and time using date-fns. Expect format: DD/MM/YYYY HH:mm AM/PM
+    const parsedDate = parse(dateTimeStr, "dd/MM/yyyy hh:mm a", new Date());
+    return parsedDate;
+  };
+
+  try {
+    const startDateTime = parseDateTime(startDate, startTime);
+    const endDateTime = parseDateTime(endDate, endTime);
+
+    console.log(startDateTime);
+    console.log(endDateTime);
+    // Check if the parsed dates are valid
+    if (!isValid(startDateTime)) {
+      return interaction.reply({
+        content:
+          "Invalid start date and time format. Please use the correct format.",
+        ephemeral: true,
+      });
+    }
+
+    if (!isValid(endDateTime)) {
+      return interaction.reply({
+        content:
+          "Invalid end date and time format. Please use the correct format.",
+        ephemeral: true,
+      });
+    }
+    // Find the giveaway by ID and update startTime and endTime
+    const giveaway = await Giveaway.findById(id);
+    if (!giveaway) {
+      return interaction.reply({
+        content: "Giveaway not found!",
+        ephemeral: true,
+      });
+    }
+
+    // Update the giveaway with new times
+    giveaway.startTime = startDateTime.getTime(); // Save as timestamp
+    giveaway.endTime = endDateTime;
+
+    // Save the updated giveaway to the database
+    await giveaway.save();
+    const { embed, components } = createGiveawayEmbed(giveaway);
+    const raffleChannel = interaction.guild.channels.cache.get(raffleChannelId);
+    if (!raffleChannel) {
+      return interaction.reply({
+        content:
+          "The raffle channel could not be found. Please check the configuration.",
+        ephemeral: true,
+      });
+    }
+    const sentMessage = await raffleChannel.send({
+      embeds: [embed],
+      components: components,
+    });
+    await interaction.reply("the raffle has been sent to the channel!");
+    giveaway.messageId = sentMessage.id;
+    giveaway.channelId = raffleChannelId;
+    await giveaway.save();
+  } catch (error) {
+    console.error(error);
+    return interaction.reply({
+      content: "An error occurred while updating the giveaway times.",
+      ephemeral: true,
+    });
+  }
 }
 
 async function addRaffleOptionals(
@@ -862,6 +969,7 @@ module.exports = {
   handleAddItemModelSubmission,
   handleEditItemModelSubmission,
   handleAddRaffle,
+  addGiveawayTimer,
   addRaffleOptionals,
   addAuctionModal,
   editAuctionModal,

@@ -460,13 +460,6 @@ async function handleCreateGiveaway(interaction) {
       required: true,
     },
     {
-      label: "Duration Time of raffle ( 2 hours, 10 days)",
-      customId: "duration_time",
-      placeholder: "Enter time duration for giveaway",
-      style: "Short",
-      required: true,
-    },
-    {
       label: "Chain of the project",
       customId: "chain_project",
       placeholder: "Enter chain of the project",
@@ -492,6 +485,13 @@ async function joinGiveaway(interaction, id) {
   if (giveaway.isExpired || new Date() > giveaway.endTime) {
     return await interaction.reply({
       content: "This giveaway has ended.",
+      ephemeral: true,
+    });
+  }
+
+  if (new Date() < giveaway.startTime) {
+    return await interaction.reply({
+      content: "This giveaway has not started yet.",
       ephemeral: true,
     });
   }

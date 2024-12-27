@@ -458,31 +458,40 @@ async function addRaffleOptionalDropDown(interaction, id) {
   let modalCustomId;
   switch (selectedOption) {
     case "none": {
-      const giveaway = await Giveaway.findById(id);
-      if (!giveaway) {
-        return interaction.reply({
-          content: "Giveaway not found.",
-          ephemeral: true,
-        });
-      }
-      const { embed, components } = createGiveawayEmbed(giveaway);
-      const raffleChannel =
-        interaction.guild.channels.cache.get(raffleChannelId);
-      if (!raffleChannel) {
-        return interaction.reply({
-          content:
-            "The raffle channel could not be found. Please check the configuration.",
-          ephemeral: true,
-        });
-      }
-      const sentMessage = await raffleChannel.send({
-        embeds: [embed],
-        components: components,
-      });
-      await interaction.reply("the raffle has been sent to the channel!");
-      giveaway.messageId = sentMessage.id;
-      giveaway.channelId = raffleChannelId;
-      await giveaway.save();
+      const fieldOptions = [
+        {
+          label: "Date to start the giveaway e.g 25/06/2024",
+          customId: "giveaway_start_date",
+          placeholder: "Enter Date  25/06/2024",
+          style: "Short",
+        },
+        {
+          label: "Time to start HH:MM PM/AM 9:24 PM",
+          customId: "giveaway_start_time",
+          placeholder: "Enter time HH:MM PM/AM  9:24 PM",
+          style: "Short",
+        },
+        {
+          label: "Date to end the giveaway e.g 25/06/2024",
+          customId: "giveaway_end_date",
+          placeholder: "Enter End Date 25/06/2024",
+          style: "Short",
+        },
+        {
+          label: "Time to end HH:MM PM/AM 9:24 PM",
+          customId: "giveaway_end_time",
+          placeholder: "Enter Time HH:MM PM/AM e.g 9:24 PM",
+          style: "Short",
+        },
+      ];
+
+      await showModal(
+        interaction,
+        "Giveaway Time Configuration",
+        `add_giveaway_time_${id}`,
+        fieldOptions
+      );
+
       break;
     }
     case "description":

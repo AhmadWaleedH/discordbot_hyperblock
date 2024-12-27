@@ -13,6 +13,9 @@ const {
 function createGiveawayEmbed(giveaway) {
   // Format end time for Discord timestamp
   const endTimeUnix = Math.floor(new Date(giveaway.endTime).getTime() / 1000);
+  const startTimeUnix = Math.floor(
+    new Date(giveaway.startTime).getTime() / 1000
+  );
 
   // Calculate time remaining
   const timeLeft = new Date(giveaway.endTime) - new Date();
@@ -68,6 +71,8 @@ function createGiveawayEmbed(giveaway) {
       {
         name: "⏰ Time Information",
         value: `
+         • **Starts:** <t:${startTimeUnix}:F>
+          • **Starts At:** <t:${startTimeUnix}:R>
           • **Ends:** <t:${endTimeUnix}:F>
           • **Time Left:** <t:${endTimeUnix}:R>
           • **Created:** <t:${Math.floor(

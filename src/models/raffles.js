@@ -13,7 +13,8 @@ const giveawaySchema = new mongoose.Schema({
   raffleTitle: { type: String, required: true },
   numWinners: { type: Number, required: true },
   entryCost: { type: Number, required: true },
-  endTime: { type: Date, required: true },
+  startTime: { type: Date, required: false },
+  endTime: { type: Date, required: false },
   chain: { type: String, required: true },
 
   // Optional fields
