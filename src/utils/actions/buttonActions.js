@@ -32,13 +32,13 @@ const buttonOptions = [
     label: "Meme",
     emoji: "🖊️",
     style: ButtonStyle.Primary,
-    customId: "meme_fun",
+    customId: "fanart_fun",
   },
   {
     label: "Community Fun",
     emoji: "👨",
     style: ButtonStyle.Primary,
-    customId: "community_fun",
+    customId: "fanart_fun",
   },
 ];
 
