@@ -462,25 +462,25 @@ async function addRaffleOptionalDropDown(interaction, id) {
         {
           label: "Date to start the giveaway e.g 25/06/2024",
           customId: "giveaway_start_date",
-          placeholder: "Enter Date  25/06/2024",
+          placeholder: "DD/MM/YYYY",
           style: "Short",
         },
         {
           label: "Time to start HH:MM PM/AM 9:24 PM",
           customId: "giveaway_start_time",
-          placeholder: "Enter time HH:MM PM/AM  9:24 PM",
+          placeholder: "HH:MM PM/AM",
           style: "Short",
         },
         {
           label: "Date to end the giveaway e.g 25/06/2024",
           customId: "giveaway_end_date",
-          placeholder: "Enter End Date 25/06/2024",
+          placeholder: "DD/MM/YYYY",
           style: "Short",
         },
         {
           label: "Time to end HH:MM PM/AM 9:24 PM",
           customId: "giveaway_end_time",
-          placeholder: "Enter Time HH:MM PM/AM e.g 9:24 PM",
+          placeholder: "HH:MM PM/AM",
           style: "Short",
         },
       ];
