@@ -3,6 +3,9 @@ const Schema = mongoose.Schema;
 
 const userSchema = new Schema({
   discordId: { type: String, required: true },
+  discordUsername: { type: String, required: true },
+
+  discordUserAvatarURL: String,
   walletAddress: { type: String },
   hyperBlockPoints: { type: Number },
   status: { type: String, enum: ["active", "inactive", "banned"] },
@@ -30,6 +33,8 @@ const userSchema = new Schema({
   serverMemberships: [
     {
       guildId: { type: String, required: true },
+      guildName: { type: String, required: true },
+      guildIcon: String,
       joinedAt: { type: Date },
       points: { type: Number },
       activeRaids: { type: Number },

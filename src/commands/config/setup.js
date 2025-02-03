@@ -118,6 +118,8 @@ module.exports = {
     if (!doc) {
       doc = new Guilds({
         guildId,
+        guildName: guild.name,
+        guildIconURL: guild.iconURL(),
         ownerDiscordId,
         botConfig: {
           channels: {},

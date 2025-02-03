@@ -6,6 +6,7 @@ const {
   ButtonStyle,
   ChannelType,
   PermissionsBitField,
+  PermissionFlagsBits,
 } = require("discord.js");
 const Guilds = require("../../models/Guilds");
 const ShopItem = require("../../models/Shop");
@@ -31,18 +32,50 @@ const sendEmbedWithButtons = require("../embeds/embedWithButtons");
 const Contest = require("../../models/Contests");
 const { generateContestEmbed } = require("../embeds/contestEmbed");
 async function teamSetupAdminRole(interaction) {
+  await interaction.deferReply({ ephemeral: true });
+
   const roleIds = interaction.values;
   const guildId = interaction.guildId;
+
+  const roles = roleIds.map((r) => {
+    const role = interaction.guild.roles.cache.get(r);
+    return { roleId: role.id, roleName: role.name };
+  });
+
   let guildDoc = await Guilds.findOne({ guildId });
+
   if (guildDoc) {
-    guildDoc.botConfig.adminRoles = roleIds;
+    const permOverWrites = roleIds.map((r) => ({
+      id: r,
+      allow: [
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.ViewChannel,
+      ],
+    }));
+
+    guildDoc.botConfig.adminRoles = roles;
+
+    await Promise.all(
+      Object.values(guildDoc.botConfig.channels).map(async (chId) => {
+        const channel = interaction.guild.channels.cache.get(chId);
+
+        if (!channel) return;
+
+        await channel.permissionOverwrites.set([
+          {
+            id: interaction.guild.roles.everyone.id,
+            deny: PermissionFlagsBits.ViewChannel,
+          },
+          ...permOverWrites,
+        ]);
+      })
+    );
     await guildDoc.save();
-    await interaction.reply({
+    await interaction.editReply({
       content: "Admin roles updated successfully!",
-      ephemeral: true,
     });
   } else {
-    await interaction.reply({
+    await interaction.editReply({
       content: "Guild not found. Please set up the server first.",
       ephemeral: true,
     });

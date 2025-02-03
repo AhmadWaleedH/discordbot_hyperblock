@@ -842,6 +842,8 @@ async function handleSocialSettingsModal(interaction) {
       // User doesn't exist, create a new user with the provided social handles
       user = new User({
         discordId,
+        discordUsername: interaction.user.username,
+        discordUserAvatarURL: interaction.user.displayAvatarURL(),
         socials,
         status: "active", // Default status or customize as needed
       });
@@ -883,6 +885,8 @@ async function handleMintWalletModals(interaction, itemId) {
   if (!user) {
     user = new userSchema({
       discordId: userId,
+      discordUsername: interaction.user.username,
+      discordUserAvatarURL: interaction.user.displayAvatarURL(),
       status: "active",
       mintWallets: {},
     });

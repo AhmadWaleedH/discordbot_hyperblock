@@ -1,6 +1,8 @@
 const { Schema, model } = require("mongoose");
 const serverSchema = new Schema({
   guildId: { type: String, required: true },
+  guildName: { type: String, required: true },
+  guildIconURL: String,
   ownerDiscordId: { type: String, required: true },
   twitterUrl: { type: String },
   category: String,
@@ -9,7 +11,7 @@ const serverSchema = new Schema({
     enabled: { type: Boolean },
     prefix: { type: String },
     adminRoles: {
-      type: [String],
+      type: [],
       default: [],
     },
     channels: {

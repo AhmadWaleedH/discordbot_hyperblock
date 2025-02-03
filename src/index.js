@@ -49,10 +49,14 @@ client.on("messageCreate", async (message) => {
     if (!user) {
       user = new User({
         discordId: message.author.id,
+        discordUsername: message.author.username,
+        discordUserAvatarURL: message.author.displayAvatarURL(),
         status: "active",
         serverMemberships: [
           {
             guildId: message.guild.id,
+            guildName: message.guild.name,
+            guildIcon: message.guild.iconURL(),
             joinedAt: new Date(),
             points: 0,
             activeRaids: 0,
@@ -68,6 +72,8 @@ client.on("messageCreate", async (message) => {
       if (!serverMembership) {
         serverMembership = {
           guildId: message.guild.id,
+          guildName: message.guild.name,
+          guildIcon: message.guild.iconURL(),
           joinedAt: new Date(),
           points: 0,
           activeRaids: 0,
