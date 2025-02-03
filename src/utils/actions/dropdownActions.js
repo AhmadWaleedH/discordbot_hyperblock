@@ -39,7 +39,11 @@ async function teamSetupAdminRole(interaction) {
 
   const roles = roleIds.map((r) => {
     const role = interaction.guild.roles.cache.get(r);
-    return { roleId: role.id, roleName: role.name };
+    return {
+      roleId: role.id,
+      roleName: role.name,
+      roleIconURL: role.iconURL(),
+    };
   });
 
   let guildDoc = await Guilds.findOne({ guildId });
