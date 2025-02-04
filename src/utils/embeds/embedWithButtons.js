@@ -19,7 +19,7 @@ async function sendEmbedWithButtons(
     .setDescription(embedOptions.description || "Default Description")
     .setColor(embedOptions.color || "#0099ff")
     .setFooter({
-      text: embedOptions.footer || "Default Footer",
+      text: embedOptions.footer || "Hypes Bot",
       iconURL:
         "https://discord.com/channels/1218982026330243143/1302958983144935444",
     })
