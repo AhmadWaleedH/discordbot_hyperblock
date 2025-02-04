@@ -38,8 +38,10 @@ async function handleSocialRewardsSubmission(interaction) {
       ...actionPoints,
     };
     await guildDoc.save();
-    await interaction.reply({
+    await interaction.update({
       content: "Points configuration updated successfully!",
+      components: [],
+      embeds: [],
       ephemeral: true,
     });
   } else {
@@ -83,9 +85,11 @@ async function handleActiveRewardsSetupSubmission(interaction) {
   const cooldown = ms(cooldownInput);
 
   if (!cooldown) {
-    return await interaction.reply({
+    return await interaction.update({
       content:
         "Invalid cooldown format. Please use a format like '2 mins' or '5 hours'.",
+      embeds: [],
+      components: [],
       ephemeral: true,
     });
   }
@@ -97,14 +101,18 @@ async function handleActiveRewardsSetupSubmission(interaction) {
     guildDoc.botConfig.chats.points = points;
     await guildDoc.save();
 
-    await interaction.reply({
+    await interaction.update({
       content: "Chat configuration updated successfully!",
       ephemeral: true,
+      embeds: [],
+      components: [],
     });
   } else {
     await interaction.reply({
       content: "Guild not found. Please set up the server first.",
       ephemeral: true,
+      embeds: [],
+      components: [],
     });
   }
 }
@@ -121,9 +129,11 @@ async function handleReactionRewardsSetupSubmission(interaction) {
   const cooldown = ms(cooldownInput);
 
   if (!cooldown) {
-    return await interaction.reply({
+    return await interaction.update({
       content:
         "Invalid cooldown format. Please use a format like '2 mins' or '5 hours'.",
+      embeds: [],
+      components: [],
       ephemeral: true,
     });
   }
@@ -135,14 +145,18 @@ async function handleReactionRewardsSetupSubmission(interaction) {
     guildDoc.botConfig.reactions.points = points;
     await guildDoc.save();
 
-    await interaction.reply({
+    await interaction.update({
       content: "Chat configuration updated successfully!",
       ephemeral: true,
+      embeds: [],
+      components: [],
     });
   } else {
-    await interaction.reply({
+    await interaction.update({
       content: "Guild not found. Please set up the server first.",
       ephemeral: true,
+      embeds: [],
+      components: [],
     });
   }
 }

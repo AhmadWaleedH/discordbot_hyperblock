@@ -24,11 +24,16 @@ const userSchema = new Schema({
     },
   },
   mintWallets: {
-    ethereum: { type: String },
-    solana: { type: String },
-    polygon: { type: String },
-    binance: { type: String },
-    cardano: { type: String },
+    Ethereum: { type: String },
+    Solana: { type: String },
+    Bitcoin: { type: String },
+    Binance: { type: String },
+    Cardano: { type: String },
+    Polygon: { type: String },
+    Avalanche: { type: String },
+    Tron: { type: String },
+    Polkadot: { type: String },
+    Ripple: { type: String },
   },
   serverMemberships: [
     {

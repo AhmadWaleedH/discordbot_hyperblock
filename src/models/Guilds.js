@@ -6,6 +6,7 @@ const serverSchema = new Schema({
   ownerDiscordId: { type: String, required: true },
   twitterUrl: { type: String },
   category: String,
+  userCategory: String,
   announcementChannelId: { type: String, required: false },
   botConfig: {
     enabled: { type: Boolean },
@@ -19,9 +20,15 @@ const serverSchema = new Schema({
       missionsHall: { type: String },
       stadium: { type: String },
       hyperMarket: { type: String },
-      myBag: { type: String },
       hyperNotes: { type: String },
       raffles: { type: String },
+    },
+    userChannels: {
+      events: { type: String },
+      myBag: { type: String },
+      raffles: { type: String },
+      shop: { type: String },
+      auctions: { type: String },
     },
     chats: {
       channels: {

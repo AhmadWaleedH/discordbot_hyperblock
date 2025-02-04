@@ -8,7 +8,8 @@ async function sendEmbedWithButtons(
   guild,
   channelId,
   embedOptions,
-  buttonOptions
+  buttonOptions,
+  interaction
 ) {
   const channel = guild.channels.cache.get(channelId);
   if (!channel) return console.error("Channel not found");
@@ -38,7 +39,13 @@ async function sendEmbedWithButtons(
 
   const actionRow = new ActionRowBuilder().addComponents(buttons);
 
-  await channel.send({ embeds: [embed], components: [actionRow] });
+  if (interaction)
+    await interaction.reply({
+      embeds: [embed],
+      components: [actionRow],
+      ephemeral: true,
+    });
+  else await channel.send({ embeds: [embed], components: [actionRow] });
 }
 
 module.exports = sendEmbedWithButtons;

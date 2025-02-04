@@ -10,39 +10,61 @@ module.exports = {
     const options = [
       {
         label: "Ethereum",
-        description: "The leading decentralized platform for smart contracts.",
-        value: "ethereum",
-      },
-      {
-        label: "Binance Smart Chain",
-        description:
-          "A blockchain network running smart contract-based applications.",
-        value: "binance",
-      },
-      {
-        label: "Polygon",
-        description:
-          "A framework for building and connecting Ethereum-compatible blockchain networks.",
-        value: "polygon",
+        description: `The leading decentralized platform for smart contracts and decentralized 
+applications (dApps).`,
+        value: "Ethereum",
       },
       {
         label: "Solana",
-        description:
-          "A high-performance blockchain supporting smart contracts and decentralized apps.",
-        value: "solana",
+        description: `A high-performance blockchain supporting smart contracts`,
+        value: "Solana",
+      },
+      {
+        label: "Bitcoin",
+        description: `The original cryptocurrency, primarily used as a store of value.`,
+        value: "Bitcoin",
+      },
+      {
+        label: "Binance",
+        description: `A fast, low-cost Ethereum-compatible blockchain`,
+        value: "Binance",
       },
       {
         label: "Cardano",
-        description:
-          "A blockchain platform for smart contracts with a research-driven approach.",
-        value: "cardano",
+        description: `A research-driven blockchain with a focus on sustainability`,
+        value: "Cardano",
+      },
+      {
+        label: "Polygon",
+        description: `A Layer-2 scaling solution for Ethereum, offering fast transactions`,
+        value: "Polygon",
+      },
+      {
+        label: "Avalanche",
+        description: `A highly scalable blockchain platform with sub-second transaction`,
+        value: "Avalanche",
+      },
+      {
+        label: "Tron",
+        description: `A decentralized platform for content sharing and entertainment dApps.`,
+        value: "Tron",
+      },
+      {
+        label: "Polkadot",
+        description: `A multi-chain network enabling cross-blockchain transfers.`,
+        value: "Polkadot",
+      },
+      {
+        label: "Ripple",
+        description: `A blockchain optimized for fast, low-cost cross-border payments`,
+        value: "Ripple",
       },
     ];
 
     // Create a select menu with a maximum of 5 values
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId("add_mint_wallet_select") // ID to identify the selection action
-      .setPlaceholder("Choose up to 5 blockchains") // Placeholder text
+      .setPlaceholder("Choose the blockchains") // Placeholder text
       .addOptions(
         options.map((option) => ({
           label: option.label,

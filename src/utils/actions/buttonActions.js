@@ -103,9 +103,9 @@ async function handlePointsSetup(interaction) {
     interaction.guild,
     interaction.channelId,
     embedOptions,
-    buttonOptions
+    buttonOptions,
+    interaction
   );
-  await interaction.deferUpdate();
 }
 
 async function handleSocialRewards(interaction) {
@@ -172,6 +172,7 @@ async function handleTeamSetup(interaction) {
   const row = new ActionRowBuilder().addComponents(roleSelect);
   await interaction.reply({
     content: "Please select your roles:",
+    ephemeral: true,
     components: [row],
   });
 }
@@ -184,8 +185,9 @@ async function handlePointsSetupActiveRewards(interaction) {
     .setMaxValues(1);
 
   const row = new ActionRowBuilder().addComponents(roleSelect);
-  await interaction.reply({
+  await interaction.update({
     content: "Please select your Channel:",
+    embeds: [],
     components: [row],
   });
 }
@@ -198,8 +200,9 @@ async function handlePointsSetupReactionRewards(interaction) {
     .setMaxValues(1);
 
   const row = new ActionRowBuilder().addComponents(roleSelect);
-  await interaction.reply({
+  await interaction.update({
     content: "Please select your Channel:",
+    embeds: [],
     components: [row],
   });
 }

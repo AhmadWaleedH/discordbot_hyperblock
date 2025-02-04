@@ -1,12 +1,17 @@
 const { PermissionsBitField, ChannelType, ButtonStyle } = require("discord.js");
-const { categoryName, channels } = require("../../utils/constants");
+const {
+  categoryName,
+  channels,
+  UserChannels,
+} = require("../../utils/constants");
 const Guilds = require("../../models/Guilds");
 const shopItem = require("../../models/Shop");
 const sendEmbedWithButtons = require("../../utils/embeds/embedWithButtons");
 
 const embedOptions = {
-  title: "Shop System",
-  description: "Here's how you can get started with adding/removing shop items",
+  title: "Config System",
+  description:
+    "Manage configuration for points, active rewards, reaction rewards here!",
   color: "#00ff99",
 };
 
@@ -128,6 +133,15 @@ module.exports = {
     }
 
     let category = guild.channels.cache.get(doc.category);
+    let userCategory = guild.channels.cache.get(doc.userCategory);
+
+    if (!userCategory) {
+      userCategory = await guild.channels.create({
+        name: "Hypes",
+        type: ChannelType.GuildCategory,
+      });
+      doc.userCategory = userCategory.id;
+    }
     if (!category) {
       category = await guild.channels.create({
         name: categoryName,
@@ -139,7 +153,23 @@ module.exports = {
     if (!doc.botConfig) {
       doc.botConfig = {
         channels: {},
+        userChannels: {},
       };
+    }
+
+    for (const channelName of UserChannels) {
+      const schemaKey = toCamelCase(channelName);
+      const existingChannelId = doc.botConfig.userChannels[schemaKey];
+      let channel = existingChannelId
+        ? guild.channels.cache.get(existingChannelId)
+        : null;
+
+      if (!channel) {
+        channel = await createChannel(guild, channelName, userCategory);
+        doc.botConfig.userChannels[schemaKey] = channel.id;
+      } else if (channel.parentId !== userCategory.id) {
+        await channel.setParent(userCategory.id);
+      }
     }
 
     for (const channelName of channels) {

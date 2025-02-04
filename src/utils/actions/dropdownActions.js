@@ -32,7 +32,7 @@ const sendEmbedWithButtons = require("../embeds/embedWithButtons");
 const Contest = require("../../models/Contests");
 const { generateContestEmbed } = require("../embeds/contestEmbed");
 async function teamSetupAdminRole(interaction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.update({ content: "Updating", components: [], embeds: [] });
 
   const roleIds = interaction.values;
   const guildId = interaction.guildId;
@@ -94,7 +94,7 @@ async function pointsSetupAdminRole(interaction) {
     await guildDoc.save();
     const fieldOptions = [
       {
-        label: "Cooldown",
+        label: "Cooldown (in minutes)",
         customId: "active_reward_cooldown",
         placeholder: "Enter Cooldown Between Messages",
         style: "Short",
@@ -128,21 +128,21 @@ async function reactionRewardSetup(interaction) {
     await guildDoc.save();
     const fieldOptions = [
       {
-        label: "Cooldown",
+        label: "Time (in minutes)",
         customId: "reaction_reward_cooldown",
-        placeholder: "Enter Cooldown Between Messages",
+        placeholder: "Input for how long each reaction reward will last",
         style: "Short",
       },
       {
         label: "Points",
         customId: "reaction_reward_points",
-        placeholder: "Enter Points for messages",
+        placeholder: "Points for reaction",
         style: "Short",
       },
     ];
     await showModal(
       interaction,
-      "Chat Rewards Configuration",
+      "Reaction Rewards Configuration",
       "reaction_reward_model",
       fieldOptions
     );
@@ -244,33 +244,54 @@ async function addAdditionalItemOptions(interaction, id) {
       const options = [
         {
           label: "Ethereum",
-          description:
-            "The leading decentralized platform for smart contracts.",
-          value: "ethereum",
-        },
-        {
-          label: "Binance Smart Chain",
-          description:
-            "A blockchain network running smart contract-based applications.",
-          value: "binance",
-        },
-        {
-          label: "Polygon",
-          description:
-            "A framework for building and connecting Ethereum-compatible blockchain networks.",
-          value: "polygon",
+          description: `The leading decentralized platform for smart contracts and decentralized 
+applications (dApps).`,
+          value: "Ethereum",
         },
         {
           label: "Solana",
-          description:
-            "A high-performance blockchain supporting smart contracts and decentralized apps.",
-          value: "solana",
+          description: `A high-performance blockchain supporting smart contracts`,
+          value: "Solana",
+        },
+        {
+          label: "Bitcoin",
+          description: `The original cryptocurrency, primarily used as a store of value.`,
+          value: "Bitcoin",
+        },
+        {
+          label: "Binance",
+          description: `A fast, low-cost Ethereum-compatible blockchain`,
+          value: "Binance",
         },
         {
           label: "Cardano",
-          description:
-            "A blockchain platform for smart contracts with a research-driven approach.",
-          value: "cardano",
+          description: `A research-driven blockchain with a focus on sustainability`,
+          value: "Cardano",
+        },
+        {
+          label: "Polygon",
+          description: `A Layer-2 scaling solution for Ethereum, offering fast transactions`,
+          value: "Polygon",
+        },
+        {
+          label: "Avalanche",
+          description: `A highly scalable blockchain platform with sub-second transaction`,
+          value: "Avalanche",
+        },
+        {
+          label: "Tron",
+          description: `A decentralized platform for content sharing and entertainment dApps.`,
+          value: "Tron",
+        },
+        {
+          label: "Polkadot",
+          description: `A multi-chain network enabling cross-blockchain transfers.`,
+          value: "Polkadot",
+        },
+        {
+          label: "Ripple",
+          description: `A blockchain optimized for fast, low-cost cross-border payments`,
+          value: "Ripple",
         },
       ];
       await sendSelectMenu(
