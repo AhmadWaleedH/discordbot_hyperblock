@@ -15,7 +15,7 @@ async function sendEmbedWithButtons(
   if (!channel) return console.error("Channel not found");
 
   const embed = new EmbedBuilder()
-    .setTitle(embedOptions.title || "Default Title")
+    .setTitle(embedOptions.title || "Hypes Bot")
     .setDescription(embedOptions.description || "Default Description")
     .setColor(embedOptions.color || "#0099ff")
     .setFooter({
