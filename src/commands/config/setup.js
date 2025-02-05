@@ -1,4 +1,4 @@
-const { PermissionsBitField, ChannelType, ButtonStyle } = require("discord.js");
+const { PermissionsBitField, ChannelType, ButtonStyle, EmbedBuilder } = require("discord.js");
 const {
   categoryName,
   channels,
@@ -193,6 +193,40 @@ module.exports = {
     // Send a welcome message in the hype-logs channel
     const hypeLogsChannelId = doc.botConfig.channels.hypeLogs;
     const hypeMarketChannelId = doc.botConfig.channels.hyperMarket;
+    const missionsHallChannelId = doc.botConfig.channels.missionsHall;
+    const stadiumChannelId = doc.botConfig.channels.stadium;
+    const rafflesChannelId = doc.botConfig.channels.raffles;
+    const hyperNotesChannelId = doc.botConfig.channels.hyperNotes;
+    // user channels
+    const eventChannelId = doc.botConfig.userChannels.events;
+    const myBagChannelId = doc.botConfig.userChannels.myBag;
+    const userRafflesChannelId = doc.botConfig.userChannels.raffles;
+    const shopChannelId = doc.botConfig.userChannels.shop;
+    const auctionsChannelId = doc.botConfig.userChannels.auctions;
+    const message = 'Tracks all member activities, rewards, and bot interactions for transparency and audit purposes';
+    const missionHallMessage = " Hosts social tasks (e.g., Twitter/Spaces engagement) and event announcements. Admins create tasks here";
+    const stadiumMessage = " Dedicated to community events (e.g., contests, predictions). Members participate to earn points"
+    const hypeMarketMessage = "  Marketplace for purchasing roles, WL spots, or merch using community/HyperBlock Points (HBPs)"
+    const raffleMessage = "Hosts raffle events. Admins configure entry costs, winners, and rewards"
+    const hyperNotesMessage = "Broadcasts critical announcements (e.g., mint dates, system updates). Admins can toggle notifications"
+    const myBagMessage = " Members view their inventory (purchased items, HBPs, and achievements)"
+    const eventsMessage = "Join exciting events where you can compete, earn rewards, and have fun with other community members. Stay tuned for new challenges and opportunities to shine!" 
+    const shopMessage = "Visit the shop to browse and purchase exclusive items, upgrades, and rewards to enhance your experience. Find everything from cosmetics to special gear!" 
+    const userRaffleMessage = "Enter raffles for a chance to win fantastic prizes. Your luck could lead to amazing rewards, so don't miss out on these thrilling opportunities!" 
+    const auctionMessage = "Participate in auctions where you can bid on rare and highly sought-after items. The highest bidder wins, so get ready to compete for unique treasures!" 
+    await sendEmbedMessage(client, missionsHallChannelId, missionHallMessage);
+    await sendEmbedMessage(client, stadiumChannelId, stadiumMessage);
+    await sendEmbedMessage(client, hypeLogsChannelId, message);
+    await sendEmbedMessage(client, hypeMarketChannelId, hypeMarketMessage);
+    await sendEmbedMessage(client, rafflesChannelId, raffleMessage);
+    await sendEmbedMessage(client, hyperNotesChannelId, hyperNotesMessage);
+    //user channels
+    await sendEmbedMessage(client, eventChannelId, eventsMessage);
+    await sendEmbedMessage(client, myBagChannelId, myBagMessage);
+    await sendEmbedMessage(client, userRafflesChannelId, userRaffleMessage);
+    await sendEmbedMessage(client, shopChannelId, shopMessage);
+    await sendEmbedMessage(client, auctionsChannelId, auctionMessage);
+
     await sendEmbedWithButtons(
       guild,
       hypeLogsChannelId,
@@ -262,4 +296,25 @@ async function formatShopItems(items) {
 ${item.allowMultiplePurchases ? "> 🔄 Can be purchased multiple times" : ""}`;
     })
     .join("\n\n");
+}
+
+
+
+
+
+async function sendEmbedMessage(client, channelId, description) {
+  try {
+      const channel = await client.channels.fetch(channelId);
+      if (!channel) throw new Error('Channel not found');
+
+      const embed = new EmbedBuilder()
+      .setDescription(description)
+      .setColor('#57F287'); // Discord green
+  
+
+      await channel.send({ embeds: [embed] });
+      console.log(`Embed sent to channel: ${channelId}`);
+  } catch (error) {
+      console.error(`Failed to send embed: ${error.message}`);
+  }
 }

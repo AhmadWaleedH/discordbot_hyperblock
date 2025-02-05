@@ -386,8 +386,15 @@ async function editItemDropdown(interaction) {
       customId: "item_quantity",
       placeholder: "Enter quantity for the item",
       style: "Short",
-      value: shopItem.quantity !== -1 ? String(shopItem.quantity) : "", // Pre-fill with quantity or empty if unlimited
+      value: shopItem.quantity !== -1 ? String(shopItem.quantity) : "",
       required: false,
+    },
+    {
+      label: "Price of the Item",
+      customId: "item_price",
+      placeholder: "Enter the Price of the item",
+      style: "Short",
+      value:  String(shopItem.price) || "",
     },
   ];
   await showModal(

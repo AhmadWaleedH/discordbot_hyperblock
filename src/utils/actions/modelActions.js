@@ -251,6 +251,17 @@ async function handleEditItemModelSubmission(interaction, id) {
   const updatedDescription =
     interaction.fields.getTextInputValue("item_description") || "";
   const updatedQuantity = interaction.fields.getTextInputValue("item_quantity");
+  
+  const updatedPrice = interaction.fields.getTextInputValue("item_price");
+
+  if (updatedQuantity && (isNaN(updatedQuantity))) {
+    return interaction.reply({ content: "Quantity must be a positive number.", ephemeral: true });
+}
+
+// Simple validation for price (if provided, must be a positive number)
+if (updatedPrice && (isNaN(updatedPrice) || parseFloat(updatedPrice) <= 0)) {
+    return interaction.reply({ content: "Price must be a positive number.", ephemeral: true });
+}
 
   const roleSelect = new RoleSelectMenuBuilder()
     .setCustomId("edititem_role_select")
@@ -313,6 +324,7 @@ async function handleEditItemModelSubmission(interaction, id) {
         shopItem.name = updatedName;
         shopItem.description = updatedDescription;
         shopItem.quantity = parseInt(updatedQuantity, 10) || -1;
+        shopItem.price = parseInt(updatedPrice, 10) || 1;
         shopItem.role = selectedRoles;
         await shopItem.save();
 
