@@ -126,7 +126,7 @@ async function handleReactionRewardsSetupSubmission(interaction) {
     interaction.fields.getTextInputValue("reaction_reward_points"),
     0
   );
-  const cooldown = ms(cooldownInput);
+  const cooldown = ms(cooldownInput + " minutes");
 
   if (!cooldown) {
     return await interaction.update({
