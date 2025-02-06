@@ -19,6 +19,7 @@ const { placeBid } = require("../logics/bid");
 const User = require("../../models/Users");
 const Contest = require("../../models/Contests");
 const { createGiveawayEmbed } = require("../embeds/giveawayEmbed");
+const { walletRegexPatterns } = require("../constants");
 async function handleSocialRewardsSubmission(interaction) {
   const guildId = interaction.guildId;
   const fields = interaction.fields;
@@ -901,15 +902,33 @@ async function handleSocialSettingsModal(interaction) {
 }
 async function handleMintWalletModals(interaction, itemId) {
   const userId = interaction.user.id;
-
   const wallet_address =
     interaction.fields.getTextInputValue("wallet_address").trim() || null;
+  
   console.log(wallet_address);
+
+  // Find the matching regex object based on itemId
+  const walletData = walletRegexPatterns.find((wallet) => wallet.value === itemId);
+
+  if (!walletData) {
+    return interaction.reply({
+      content: `Invalid cryptocurrency selection.`,
+      ephemeral: true,
+    });
+  }
+console.log(walletData);
+  // Validate wallet address
+  if (!walletData.regex.test(wallet_address)) {
+    return interaction.reply({
+      content: `Invalid ${itemId} wallet address format. Please enter a correct address.`,
+      ephemeral: true,
+    });
+  }
 
   let user = await User.findOne({ discordId: userId });
 
   if (!user) {
-    user = new userSchema({
+    user = new User({
       discordId: userId,
       discordUsername: interaction.user.username,
       discordUserAvatarURL: interaction.user.displayAvatarURL(),
@@ -927,7 +946,6 @@ async function handleMintWalletModals(interaction, itemId) {
     ephemeral: true,
   });
 }
-
 async function handleContestCreationModal(interaction) {
   const title = interaction.fields.getTextInputValue("title_contest");
   const duration = interaction.fields.getTextInputValue("duation_contest");
