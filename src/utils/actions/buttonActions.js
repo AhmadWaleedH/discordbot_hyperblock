@@ -320,6 +320,7 @@ async function handlePurchaseItems(interaction) {
   );
 }
 async function handleAddedPurchaseItems(interaction, id) {
+  try{
   const userId = interaction.user.id;
   const userRoles = interaction.member.roles.cache.map((role) => role.id);
 
@@ -438,6 +439,7 @@ async function handleAddedPurchaseItems(interaction, id) {
         .catch(console.error);
     }
   });
+}catch(e){console.log(e)}
 }
 async function handleCreateGiveaway(interaction) {
   const fieldOptions = [

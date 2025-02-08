@@ -31,6 +31,7 @@ const Auction = require("../../models/Auction");
 const sendEmbedWithButtons = require("../embeds/embedWithButtons");
 const Contest = require("../../models/Contests");
 const { generateContestEmbed } = require("../embeds/contestEmbed");
+const { createAuctionEmbedSaving } = require("../embeds/auctionEmbed");
 async function teamSetupAdminRole(interaction) {
   await interaction.update({ content: "Updating", components: [], embeds: [] });
 
@@ -210,9 +211,9 @@ async function addAdditionalItemOptions(interaction, id) {
       if (!guild) {
         return interaction.reply("❌ **Server configuration not found!**");
       }
-      const hypermarketChannelId = guild.botConfig.channels.hyperMarket;
+      const hypermarketChannelId = guild.botConfig.userChannels.shop;
       if (!hypermarketChannelId) {
-        return interaction.reply("❌ **Hypermarket channel not configured!**");
+        return interaction.reply("❌ **shop channel not configured!**");
       }
       const hypermarketChannel = await interaction.guild.channels.fetch(
         hypermarketChannelId
@@ -994,6 +995,31 @@ async function addAuctionRoleDropdown(interaction, itemId) {
     try {
       const selectedValue = selectInteraction.values[0];
       if (selectedValue === "run") {
+
+        const guild = await Guilds.findOne({ guildId : selectInteraction.guildId });
+
+        const auctionChannel = guild.botConfig?.userChannels?.auctions || null;
+        const channel = await interaction.guild.channels.cache.get(auctionChannel);
+        const { embed, components } = createAuctionEmbedSaving(auction);
+
+        // Send the message
+        const sentMessage = await channel.send({
+          embeds: [embed],
+          components: components,
+        });
+    
+        // Create new EmbedMessage document
+        const embedMessage = new EmbedMessages({
+          itemId: auction._id,
+          guildId: selectInteraction.guildId,
+          channelId: auctionChannel,
+          messageId: sentMessage.id,
+        });
+    
+        // Save to database
+        await embedMessage.save();
+    
+        console.log(`Successfully sent and saved auction embed for auction ${auction._id}`);
         await selectInteraction.reply({
           content: "New Auction Created Successfully!",
           ephemeral: true,

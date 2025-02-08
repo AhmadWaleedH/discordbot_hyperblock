@@ -56,11 +56,9 @@ async function handlePurchase(userId, itemId, userRoles) {
         message: "Your account status does not allow purchases.",
       };
     }
-
-    // Validate price and points
+  
     if (
-      typeof item.price !== "number" ||
-      typeof user.hyperBlockPoints !== "number"
+      typeof item.price !== "number"
     ) {
       return { success: false, message: "Invalid item price or user points." };
     }
