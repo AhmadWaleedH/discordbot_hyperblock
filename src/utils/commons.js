@@ -34,11 +34,10 @@ async function updateGiveaway(interaction, id, updateData) {
   }
 }
 
-async function handlePurchase(userId, itemId, userRoles) {
+async function handlePurchase(userId, itemId, userRoles, guildId) {
   try {
     const user = await Users.findOne({ discordId: userId });
     const item = await ShopItem.findById(itemId);
-    console.log(userRoles);
     // Check user existence
     if (!user) {
       return { success: false, message: "User not found." };
@@ -79,10 +78,19 @@ async function handlePurchase(userId, itemId, userRoles) {
       return { success: false, message: "This item is out of stock." };
     }
 
-    // Check points
-    if (user.hyperBlockPoints < item.price) {
+    const serverMembership = user.serverMemberships.find(
+      membership => membership.guildId === guildId
+    );
+
+    if (!serverMembership) {
+      return { success: false, message: "User is not a member of this server." };
+    }
+
+    // Check if user has enough points in this server
+    if (serverMembership.points < item.price) {
       return { success: false, message: "Insufficient points." };
     }
+
 
     // Check previous purchase
     const alreadyPurchased = user.purchases.some(

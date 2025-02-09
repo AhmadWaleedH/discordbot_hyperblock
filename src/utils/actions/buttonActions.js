@@ -325,7 +325,7 @@ async function handleAddedPurchaseItems(interaction, id) {
   const userRoles = interaction.member.roles.cache.map((role) => role.id);
 
   // First validate the purchase
-  const validation = await handlePurchase(userId, id, userRoles);
+  const validation = await handlePurchase(userId, id, userRoles,interaction.guildId);
 
   if (!validation.success) {
     return await interaction.reply({
@@ -369,7 +369,10 @@ async function handleAddedPurchaseItems(interaction, id) {
     if (i.customId === "confirm_purchase") {
       try {
         // Process the purchase
-        user.hyperBlockPoints -= item.price;
+        const serverMembership = user.serverMemberships.find(
+          membership => membership.guildId === i.guildId
+        );
+        serverMembership.points -= item.price;
         user.purchases.push({
           itemId: item._id,
           totalPrice: item.price,

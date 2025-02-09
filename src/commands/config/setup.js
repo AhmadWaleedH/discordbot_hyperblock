@@ -8,6 +8,55 @@ const Guilds = require("../../models/Guilds");
 const shopItem = require("../../models/Shop");
 const sendEmbedWithButtons = require("../../utils/embeds/embedWithButtons");
 
+
+const contestButtonOptions = [
+  {
+    label: "Prediction",
+    emoji: "➕",
+    style: ButtonStyle.Success,
+    customId: "prediction_btn",
+  },
+  {
+    label: "Contests",
+    emoji: "🖊️",
+    style: ButtonStyle.Primary,
+    customId: "contests_btn",
+  },
+];
+
+const contestEmbedOptions = {
+  title: "Create/ Manage Your Events Here!",
+  description: "Here's how you can get started with events:",
+  color: "#00ff99",
+};
+const giveawayButtonOptions = [
+  {
+    label: "Create",
+    emoji: "➕",
+    style: ButtonStyle.Success,
+    customId: "create_giveaway",
+  },
+  {
+    label: "Edit",
+    emoji: "🖊️",
+    style: ButtonStyle.Primary,
+    customId: "edit_giveaway",
+  },
+  {
+    label: "Delete",
+    emoji: "❌",
+    style: ButtonStyle.Danger,
+    customId: "delete_giveaway",
+  },
+];
+
+const giveawayembedOptions = {
+  title: "Welcome to the Server!",
+  description: "Here's how you can get started with the server setup:",
+  color: "#00ff99",
+};
+
+
 const embedOptions = {
   title: "Config System",
   description:
@@ -245,6 +294,19 @@ module.exports = {
       description: itemsDisplay,
       color: "#00ff99",
     };
+    await sendEmbedWithButtons(
+      guild,
+      stadiumChannelId,
+      contestEmbedOptions,
+      contestButtonOptions
+    );
+
+    await sendEmbedWithButtons(
+      guild,
+      rafflesChannelId,
+      giveawayembedOptions,
+      giveawayButtonOptions
+    );
     await sendEmbedWithButtons(
       guild,
       hypeMarketChannelId,

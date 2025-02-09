@@ -79,7 +79,7 @@ const {
   
     // Create bid button
     const bidButton = new ButtonBuilder()
-      .setCustomId(`placeBid_${auction._id}`)
+      .setCustomId(`bid_auction`)
       .setLabel(auction.blindAuction ? "Place Blind Bid" : "Place Bid")
       .setStyle(ButtonStyle.Primary)
       .setEmoji("🎫")

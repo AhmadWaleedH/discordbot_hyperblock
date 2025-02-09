@@ -27,7 +27,14 @@ async function endAuction(auction, client) {
     const channel = guild.channels.cache.get(
       guildDoc.botConfig.channels.hypeLogs
     );
+
+    const auctionChannel = guild.channels.cache.get(guildDoc.botConfig.userChannels.auctions)
     if (!channel) {
+      console.error(`Channel not found for auction ${auction._id}`);
+      return;
+    }
+
+    if (!auctionChannel) {
       console.error(`Channel not found for auction ${auction._id}`);
       return;
     }
@@ -84,7 +91,7 @@ async function endAuction(auction, client) {
     await auction.save();
 
     // Send the auction end message to the channel
-    await channel.send({ embeds: [endEmbed] });
+    await auctionChannel.send({ embeds: [endEmbed] });
 
     const csvFilePath = await saveAuctionResultsToCSV(auction, winner);
 
