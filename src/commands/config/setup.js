@@ -11,12 +11,6 @@ const sendEmbedWithButtons = require("../../utils/embeds/embedWithButtons");
 
 const contestButtonOptions = [
   {
-    label: "Prediction",
-    emoji: "➕",
-    style: ButtonStyle.Success,
-    customId: "prediction_btn",
-  },
-  {
     label: "Contests",
     emoji: "🖊️",
     style: ButtonStyle.Primary,
