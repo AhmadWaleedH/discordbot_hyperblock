@@ -8,7 +8,7 @@ const {
   ActionRowBuilder,
   ButtonStyle,
 } = require("discord.js");
-async function updateGiveaway(interaction, id, updateData) {
+async function updateGiveaway(interaction, id, updateData, shouldUpdate) {
   try {
     const updatedGiveaway = await Giveaway.findByIdAndUpdate(id, updateData, {
       new: true,
@@ -21,6 +21,12 @@ async function updateGiveaway(interaction, id, updateData) {
       });
     }
 
+    if (shouldUpdate)
+      return await interaction.update({
+        content: "Giveaway optional added successfully.",
+        ephemeral: true,
+        components: [],
+      });
     await interaction.reply({
       content: "Giveaway optional added successfully.",
       ephemeral: true,
@@ -55,10 +61,8 @@ async function handlePurchase(userId, itemId, userRoles, guildId) {
         message: "Your account status does not allow purchases.",
       };
     }
-  
-    if (
-      typeof item.price !== "number"
-    ) {
+
+    if (typeof item.price !== "number") {
       return { success: false, message: "Invalid item price or user points." };
     }
 
@@ -79,18 +83,20 @@ async function handlePurchase(userId, itemId, userRoles, guildId) {
     }
 
     const serverMembership = user.serverMemberships.find(
-      membership => membership.guildId === guildId
+      (membership) => membership.guildId === guildId
     );
 
     if (!serverMembership) {
-      return { success: false, message: "User is not a member of this server." };
+      return {
+        success: false,
+        message: "User is not a member of this server.",
+      };
     }
 
     // Check if user has enough points in this server
     if (serverMembership.points < item.price) {
       return { success: false, message: "Insufficient points." };
     }
-
 
     // Check previous purchase
     const alreadyPurchased = user.purchases.some(

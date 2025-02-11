@@ -428,14 +428,7 @@ async function handleAddRaffle(interaction) {
     entryCost: entryCost,
     chain: chain,
   });
-  giveaway
-    .save()
-    .then(() => {
-      console.log("Giveaway saved successfully!");
-    })
-    .catch((error) => {
-      console.error("Error saving giveaway:", error);
-    });
+  await giveaway.save();
 
   const options = [
     {
@@ -480,7 +473,8 @@ async function handleAddRaffle(interaction) {
     "Choose your Optional Settings for the Raffle!",
     `add_optionalgiveaway_select_${giveaway._id}`,
     "Make a selection!",
-    options
+    options,
+    false
   );
 }
 
@@ -579,17 +573,22 @@ async function addGiveawayTimer(interaction, id) {
     const { embed, components } = createGiveawayEmbed(giveaway);
     const raffleChannel = interaction.guild.channels.cache.get(raffleChannelId);
     if (!raffleChannel) {
-      return interaction.reply({
+      return interaction.update({
         content:
           "The raffle channel could not be found. Please check the configuration.",
         ephemeral: true,
+        components: [],
       });
     }
     const sentMessage = await raffleChannel.send({
       embeds: [embed],
       components: components,
     });
-    await interaction.reply("the raffle has been sent to the channel!");
+    await interaction.update({
+      content: "The raffle has been sent to the channel!",
+      ephemeral: true,
+      components: [],
+    });
     giveaway.messageId = sentMessage.id;
     giveaway.channelId = raffleChannelId;
     await giveaway.save();

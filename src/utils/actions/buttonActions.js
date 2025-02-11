@@ -615,7 +615,8 @@ async function handleEditGiveaway(interaction) {
     content,
     `edit_giveaway_select`,
     "🎟️ Choose a giveaway to view or enter...",
-    giveawayOptions
+    giveawayOptions,
+    false
   );
 }
 

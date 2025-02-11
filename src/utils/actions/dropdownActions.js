@@ -654,9 +654,14 @@ async function addRaffleOptionalDropDown(interaction, id) {
 }
 async function addRaffleOptionalsDb(interaction, id, dbKey) {
   const value = await interaction.values[0];
-  await updateGiveaway(interaction, id, {
-    [dbKey]: value,
-  });
+  await updateGiveaway(
+    interaction,
+    id,
+    {
+      [dbKey]: value,
+    },
+    true
+  );
 }
 async function editRaffleDropdown(interaction) {
   let selectedOptions = interaction.values[0];
@@ -1037,9 +1042,11 @@ async function addAuctionRoleDropdown(interaction, itemId) {
         console.log(
           `Successfully sent and saved auction embed for auction ${auction._id}`
         );
-        await selectInteraction.reply({
+        await selectInteraction.update({
           content: "New Auction Created Successfully!",
           ephemeral: true,
+          components: [],
+          embeds: [],
         });
       } else {
         const modalConfigs = {
@@ -1050,7 +1057,7 @@ async function addAuctionRoleDropdown(interaction, itemId) {
               {
                 label: "Minimum Bid",
                 customId: "minimum_bid",
-                placeholder: "Enter No Of Winners",
+                placeholder: "Enter minimum bid",
                 style: "Short",
               },
             ],
@@ -1062,7 +1069,7 @@ async function addAuctionRoleDropdown(interaction, itemId) {
               {
                 label: "Blind Auction",
                 customId: "blind_auction",
-                placeholder: "Enter Chain project",
+                placeholder: "Enter yes/no",
                 style: "Short",
               },
             ],
@@ -1120,18 +1127,6 @@ async function addAuctionRoleDropdown(interaction, itemId) {
       }
     } catch (error) {
       console.error("Error handling select menu:", error);
-    }
-  });
-  collector.on("end", (collected) => {
-    if (collected.size === 0) {
-      console.log("No selection was made within the time limit");
-      // Optionally handle timeout
-      interaction
-        .followUp({
-          content: "You did not make a selection in time!",
-          ephemeral: true,
-        })
-        .catch(console.error);
     }
   });
 }
