@@ -244,26 +244,38 @@ async function handleEditItemModelSubmission(interaction, id) {
   const shopItem = await ShopItem.findById(id);
 
   if (!shopItem) {
-    return await interaction.reply({
+    return await interaction.update({
       content: "Shop item not found.",
       ephemeral: true,
+      components: [],
+      embeds: [],
     });
   }
   const updatedName = interaction.fields.getTextInputValue("item_name");
   const updatedDescription =
     interaction.fields.getTextInputValue("item_description") || "";
   const updatedQuantity = interaction.fields.getTextInputValue("item_quantity");
-  
+
   const updatedPrice = interaction.fields.getTextInputValue("item_price");
 
-  if (updatedQuantity && (isNaN(updatedQuantity))) {
-    return interaction.reply({ content: "Quantity must be a positive number.", ephemeral: true });
-}
+  if (updatedQuantity && isNaN(updatedQuantity)) {
+    return interaction.update({
+      content: "Quantity must be a positive number.",
+      components: [],
+      embeds: [],
+      ephemeral: true,
+    });
+  }
 
-// Simple validation for price (if provided, must be a positive number)
-if (updatedPrice && (isNaN(updatedPrice) || parseFloat(updatedPrice) <= 0)) {
-    return interaction.reply({ content: "Price must be a positive number.", ephemeral: true });
-}
+  // Simple validation for price (if provided, must be a positive number)
+  if (updatedPrice && (isNaN(updatedPrice) || parseFloat(updatedPrice) <= 0)) {
+    return interaction.reply({
+      content: "Price must be a positive number.",
+      components: [],
+      embeds: [],
+      ephemeral: true,
+    });
+  }
 
   const roleSelect = new RoleSelectMenuBuilder()
     .setCustomId("edititem_role_select")
@@ -274,15 +286,16 @@ if (updatedPrice && (isNaN(updatedPrice) || parseFloat(updatedPrice) <= 0)) {
   const roleSelectRow = new ActionRowBuilder().addComponents(roleSelect);
 
   // Reply with the role selection menu
-  await interaction.reply({
+  await interaction.update({
     content: "Please select roles that will be given to buyer of the item",
     components: [roleSelectRow],
+    embeds: [],
     ephemeral: true,
   });
 
   const filter = (i) =>
     i.customId === "edititem_role_select" && i.user.id === interaction.user.id;
-  const collector = interaction.channel.createMessageComponentCollector({
+  const collector = interaction.message.createMessageComponentCollector({
     filter,
     max: 1,
     time: 60000,
@@ -313,7 +326,7 @@ if (updatedPrice && (isNaN(updatedPrice) || parseFloat(updatedPrice) <= 0)) {
     });
 
     const buttonCollector =
-      roleInteraction.channel.createMessageComponentCollector({
+      roleInteraction.message.createMessageComponentCollector({
         filter: (i) =>
           i.user.id === interaction.user.id &&
           ["submit_edit", "cancel_edit", "delete_item"].includes(i.customId),
@@ -336,22 +349,17 @@ if (updatedPrice && (isNaN(updatedPrice) || parseFloat(updatedPrice) <= 0)) {
         console.log(embedMessage);
         const { guildId, channelId, messageId } = embedMessage;
 
-        const guild = await interaction.client.guilds.fetch(guildId);
-        if (!guild) {
-          throw new Error("Guild not found.");
-        }
+        const guild = await interaction.client.guilds.cache.get(guildId);
+        if (!guild) return;
 
-        const channel = await guild.channels.fetch(channelId);
+        const channel = await guild.channels.cache.get(channelId);
         console.log(channel);
-        if (!channel) {
-          throw new Error("Channel not found or is not a text channel.");
-        }
-
+        if (!channel) return;
         // Fetch the message and update it
-        const message = await channel.messages.fetch(messageId);
-        if (!message) {
-          throw new Error("Message not found.");
-        }
+        const message = await channel.messages
+          .fetch(messageId)
+          .catch(console.error);
+        if (!message) return;
 
         await message.edit({
           embeds: [embed],
@@ -377,24 +385,6 @@ if (updatedPrice && (isNaN(updatedPrice) || parseFloat(updatedPrice) <= 0)) {
         });
       }
     });
-
-    buttonCollector.on("end", async (collected) => {
-      if (!collected.size) {
-        await roleInteraction.editReply({
-          content: "Action timed out.",
-          components: [],
-        });
-      }
-    });
-  });
-
-  collector.on("end", async (collected) => {
-    if (!collected.size) {
-      await interaction.editReply({
-        content: "Role selection timed out.",
-        components: [],
-      });
-    }
   });
 }
 async function handleAddRaffle(interaction) {
@@ -772,7 +762,7 @@ async function editAuctionModal(interaction, id) {
 
   const embedMessage = await EmbedMessages.findOne({ itemId: id });
   if (!embedMessage) {
-    throw new Error('Could not find message data for this auction');
+    throw new Error("Could not find message data for this auction");
   }
 
   // Get the channel
@@ -784,7 +774,7 @@ async function editAuctionModal(interaction, id) {
   // Fetch the message
   const message = await channel.messages.fetch(embedMessage.messageId);
   if (!message) {
-    throw new Error('Could not find the auction message');
+    throw new Error("Could not find the auction message");
   }
 
   // Create new embed with updated auction data
@@ -793,7 +783,7 @@ async function editAuctionModal(interaction, id) {
   // Edit the message
   await message.edit({
     embeds: [embed],
-    components: components
+    components: components,
   });
   await interaction.reply({
     content: "Auction Edited Successfully.",
@@ -931,11 +921,13 @@ async function handleMintWalletModals(interaction, itemId) {
   const userId = interaction.user.id;
   const wallet_address =
     interaction.fields.getTextInputValue("wallet_address").trim() || null;
-  
+
   console.log(wallet_address);
 
   // Find the matching regex object based on itemId
-  const walletData = walletRegexPatterns.find((wallet) => wallet.value === itemId);
+  const walletData = walletRegexPatterns.find(
+    (wallet) => wallet.value === itemId
+  );
 
   if (!walletData) {
     return interaction.reply({
@@ -943,7 +935,7 @@ async function handleMintWalletModals(interaction, itemId) {
       ephemeral: true,
     });
   }
-console.log(walletData);
+  console.log(walletData);
   // Validate wallet address
   if (!walletData.regex.test(wallet_address)) {
     return interaction.reply({

@@ -18,7 +18,8 @@ async function sendSelectMenu(
   content,
   customId,
   placeholder,
-  options
+  options,
+  shouldUpdate = true
 ) {
   const selectMenu = new StringSelectMenuBuilder()
     .setCustomId(customId)
@@ -37,12 +38,18 @@ async function sendSelectMenu(
   // Create the ActionRow with the select menu component
   const row = new ActionRowBuilder().addComponents(selectMenu);
 
-  // Send the message with the content and the select menu
-  await interaction.reply({
-    content: content,
-    components: [row],
-    ephemeral: true,
-  });
+  if (shouldUpdate)
+    await interaction.update({
+      content: content,
+      components: [row],
+      ephemeral: true,
+    });
+  if (!shouldUpdate)
+    await interaction.reply({
+      content: content,
+      components: [row],
+      ephemeral: true,
+    });
 }
 
 module.exports = sendSelectMenu;

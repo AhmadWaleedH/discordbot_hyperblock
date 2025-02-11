@@ -159,9 +159,11 @@ async function addItemRoleDropDown(interaction, id) {
     const selectedRoleId = interaction.values[0];
     const shopItem = await ShopItem.findById(id);
     if (!shopItem) {
-      return interaction.reply({
+      return await interaction.update({
         content: "Item not found.",
         ephemeral: true,
+        components: [],
+        embeds: [],
       });
     }
     shopItem.role = selectedRoleId;
@@ -238,7 +240,11 @@ async function addAdditionalItemOptions(interaction, id) {
       });
       await embedMessage.save();
       // Confirm to user
-      await interaction.reply("Items Created Successfully.");
+      await interaction.update({
+        content: "Items Created Successfully.",
+        components: [],
+        embeds: [],
+      });
       break;
     }
     case "blockchain": {
@@ -300,7 +306,8 @@ applications (dApps).`,
         "Choose your BlockChain for the Items!",
         `additem_blockchain_select_${id}`,
         "Make a selection!",
-        options
+        options,
+        false
       );
       break;
     }
@@ -334,9 +341,11 @@ async function addItemBlockChainDropDown(interaction, id) {
   }
   shopItem.blockchainId = selectedRoleId;
   await shopItem.save();
-  await interaction.reply({
-    content: "Item Created Successfully.",
+  await interaction.update({
+    content: "Set the blockchain, please click on run in the above dropdown.",
     ephemeral: true,
+    components: [],
+    embeds: [],
   });
 }
 async function addItemRoleGateDropDown(interaction, id) {
@@ -350,8 +359,9 @@ async function addItemRoleGateDropDown(interaction, id) {
   }
   shopItem.requiredRoleToPurchase = selectedRoleId;
   await shopItem.save();
-  await interaction.reply({
-    content: "Item Created Successfully.",
+  await interaction.update({
+    content: "Set the role successfully",
+    components: [],
     ephemeral: true,
   });
 }
@@ -360,9 +370,11 @@ async function editItemDropdown(interaction) {
   console.log(selectedItemId);
   const shopItem = await ShopItem.findById(selectedItemId);
   if (!shopItem) {
-    return await interaction.reply({
+    return await interaction.update({
       content: "Shop item not found.",
       ephemeral: true,
+      components: [],
+      embeds: [],
     });
   }
   // // Create field options with pre-filled values
@@ -395,7 +407,7 @@ async function editItemDropdown(interaction) {
       customId: "item_price",
       placeholder: "Enter the Price of the item",
       style: "Short",
-      value:  String(shopItem.price) || "",
+      value: String(shopItem.price) || "",
     },
   ];
   await showModal(
@@ -995,11 +1007,14 @@ async function addAuctionRoleDropdown(interaction, itemId) {
     try {
       const selectedValue = selectInteraction.values[0];
       if (selectedValue === "run") {
-
-        const guild = await Guilds.findOne({ guildId : selectInteraction.guildId });
+        const guild = await Guilds.findOne({
+          guildId: selectInteraction.guildId,
+        });
 
         const auctionChannel = guild.botConfig?.userChannels?.auctions || null;
-        const channel = await interaction.guild.channels.cache.get(auctionChannel);
+        const channel = await interaction.guild.channels.cache.get(
+          auctionChannel
+        );
         const { embed, components } = createAuctionEmbedSaving(auction);
 
         // Send the message
@@ -1007,7 +1022,7 @@ async function addAuctionRoleDropdown(interaction, itemId) {
           embeds: [embed],
           components: components,
         });
-    
+
         // Create new EmbedMessage document
         const embedMessage = new EmbedMessages({
           itemId: auction._id,
@@ -1015,11 +1030,13 @@ async function addAuctionRoleDropdown(interaction, itemId) {
           channelId: auctionChannel,
           messageId: sentMessage.id,
         });
-    
+
         // Save to database
         await embedMessage.save();
-    
-        console.log(`Successfully sent and saved auction embed for auction ${auction._id}`);
+
+        console.log(
+          `Successfully sent and saved auction embed for auction ${auction._id}`
+        );
         await selectInteraction.reply({
           content: "New Auction Created Successfully!",
           ephemeral: true,
