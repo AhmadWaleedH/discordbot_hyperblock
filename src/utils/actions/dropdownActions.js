@@ -964,7 +964,7 @@ async function deleteRaffleDropdown(interaction) {
   const selectedId = interaction.values[0];
   const giveaway = await Giveaway.findByIdAndDelete(selectedId);
   if (giveaway) {
-    await interaction.reply("Successfully deleted the Selected Giveaway");
+    await interaction.update({content:"Successfully deleted the Selected Giveaway", components:[]});
   } else {
     await interaction.reply("failed to delete the selected Giveaway!");
   }
