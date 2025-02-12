@@ -20,7 +20,7 @@ const User = require("../../models/Users");
 const Contest = require("../../models/Contests");
 const { createGiveawayEmbed } = require("../embeds/giveawayEmbed");
 const { walletRegexPatterns } = require("../constants");
-const { createAuctionEmbedSaving } = require("../embeds/auctionEmbed");
+const { createAuctionEmbedSaving, createAuctionEmbed } = require("../embeds/auctionEmbed");
 async function handleSocialRewardsSubmission(interaction) {
   const guildId = interaction.guildId;
   const fields = interaction.fields;
@@ -788,7 +788,7 @@ async function editAuctionModal(interaction, id) {
   }
 
   // Create new embed with updated auction data
-  const { embed, components } = createAuctionEmbedSaving(auction);
+  const { embed, components } = createAuctionEmbed(auction);
 
   // Edit the message
   await message.edit({
@@ -818,6 +818,33 @@ async function handleBidAmountModal(interaction, id) {
     bid_amount,
     interaction.guildId
   );
+
+  const auction = await Auction.findById(id)
+  const embedMessage = await EmbedMessages.findOne({ itemId: id });
+  if (!embedMessage) {
+    throw new Error('Could not find message data for this auction');
+  }
+
+  // Get the channel
+  const channel = interaction.guild.channels.cache.get(embedMessage.channelId);
+  if (!channel) {
+    throw new Error(`Channel ${embedMessage.channelId} not found`);
+  }
+
+  // Fetch the message
+  const message = await channel.messages.fetch(embedMessage.messageId);
+  if (!message) {
+    throw new Error('Could not find the auction message');
+  }
+
+  // Create new embed with updated auction data
+  const { embed, components } = createAuctionEmbed(auction);
+
+  // Edit the message
+  await message.edit({
+    embeds: [embed],
+    components: components
+  });
 
   if (result.success) {
     await interaction.reply({

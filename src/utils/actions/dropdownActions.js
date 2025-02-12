@@ -31,7 +31,7 @@ const Auction = require("../../models/Auction");
 const sendEmbedWithButtons = require("../embeds/embedWithButtons");
 const Contest = require("../../models/Contests");
 const { generateContestEmbed } = require("../embeds/contestEmbed");
-const { createAuctionEmbedSaving } = require("../embeds/auctionEmbed");
+const { createAuctionEmbed } = require("../embeds/auctionEmbed");
 async function teamSetupAdminRole(interaction) {
   await interaction.update({ content: "Updating", components: [], embeds: [] });
 
@@ -1000,7 +1000,7 @@ async function addAuctionRoleDropdown(interaction, itemId) {
 
         const auctionChannel = guild.botConfig?.userChannels?.auctions || null;
         const channel = await interaction.guild.channels.cache.get(auctionChannel);
-        const { embed, components } = createAuctionEmbedSaving(auction);
+        const { embed, components } = createAuctionEmbed(auction);
 
         // Send the message
         const sentMessage = await channel.send({
@@ -1175,8 +1175,7 @@ async function deleteAuctionSelect(interaction) {
 async function bidAuctionSelect(interaction) {
   const selectedId = interaction.values[0];
   const auction = await Auction.findById(selectedId);
-  console.log(auction);
-  const { embed, row } = createAuctionEmbed(auction);
+  
   interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
 }
 
@@ -1253,83 +1252,83 @@ module.exports = {
   contestCreationSelect,
 };
 
-function createAuctionEmbed(auction) {
-  // Calculate time remaining
-  // const timeRemaining = auction.duration - new Date();
-  // const daysRemaining = Math.ceil(timeRemaining / (1000 * 60 * 60 * 24));
-  const endTimeUnix = Math.floor(new Date(auction.duration).getTime() / 1000);
+// function createAuctionEmbed(auction) {
+//   // Calculate time remaining
+//   // const timeRemaining = auction.duration - new Date();
+//   // const daysRemaining = Math.ceil(timeRemaining / (1000 * 60 * 60 * 24));
+//   const endTimeUnix = Math.floor(new Date(auction.duration).getTime() / 1000);
 
-  // Calculate time remaining
-  // const timeLeft = new Date(giveaway.endTime) - new Date();
-  // Create the embed
-  const embed = new EmbedBuilder()
-    .setTitle("Super")
-    .setDescription(
-      `New ${auction.chain} Auction is live! Click Below To Place Your Bid.\nThere Will Be ${auction.quantity} Spot(s) In This Auction.`
-    )
-    .setColor("#0099ff")
-    .addFields(
-      {
-        name: "Ends",
-        value: `<t:${endTimeUnix}:R>`,
-        inline: true,
-      },
-      {
-        name: "Highest Bidder",
-        value: auction.currentBidder ? `<@${auction.currentBidder}>` : "-",
-        inline: true,
-      },
-      {
-        name: "Value",
-        value: auction.currentBid ? `${auction.currentBid}` : "-",
-        inline: true,
-      }
-    );
+//   // Calculate time remaining
+//   // const timeLeft = new Date(giveaway.endTime) - new Date();
+//   // Create the embed
+//   const embed = new EmbedBuilder()
+//     .setTitle("Super")
+//     .setDescription(
+//       `New ${auction.chain} Auction is live! Click Below To Place Your Bid.\nThere Will Be ${auction.quantity} Spot(s) In This Auction.`
+//     )
+//     .setColor("#0099ff")
+//     .addFields(
+//       {
+//         name: "Ends",
+//         value: `<t:${endTimeUnix}:R>`,
+//         inline: true,
+//       },
+//       {
+//         name: "Highest Bidder",
+//         value: auction.currentBidder ? `<@${auction.currentBidder}>` : "-",
+//         inline: true,
+//       },
+//       {
+//         name: "Value",
+//         value: auction.currentBid ? `${auction.currentBid}` : "-",
+//         inline: true,
+//       }
+//     );
 
-  // Add bids section
-  if (auction.bidders && auction.bidders.length > 0) {
-    const bidsField = auction.bidders
-      .sort((a, b) => b.bidAmount - a.bidAmount)
-      .slice(0, 6) // Show top 6 bids
-      .map((bid) => `<@${bid.userId}> - ${bid.bidAmount}`)
-      .join("\n");
+//   // Add bids section
+//   if (auction.bidders && auction.bidders.length > 0) {
+//     const bidsField = auction.bidders
+//       .sort((a, b) => b.bidAmount - a.bidAmount)
+//       .slice(0, 6) // Show top 6 bids
+//       .map((bid) => `<@${bid.userId}> - ${bid.bidAmount}`)
+//       .join("\n");
 
-    embed.addFields({
-      name: "Bids",
-      value: bidsField || "-",
-    });
-  } else {
-    // Add empty bid placeholders like in the image
-    embed.addFields({
-      name: "Bids",
-      value: Array(6).fill("-").join("\n"),
-    });
-  }
+//     embed.addFields({
+//       name: "Bids",
+//       value: bidsField || "-",
+//     });
+//   } else {
+//     // Add empty bid placeholders like in the image
+//     embed.addFields({
+//       name: "Bids",
+//       value: Array(6).fill("-").join("\n"),
+//     });
+//   }
 
-  // Create buttons
-  const bidButton = new ButtonBuilder()
-    .setCustomId(`place_bid_${auction._id}`)
-    .setLabel("Bid")
-    .setStyle(ButtonStyle.Primary)
-    .setEmoji("💰");
+//   // Create buttons
+//   const bidButton = new ButtonBuilder()
+//     .setCustomId(`place_bid_${auction._id}`)
+//     .setLabel("Bid")
+//     .setStyle(ButtonStyle.Primary)
+//     .setEmoji("💰");
 
-  const changeWalletButton = new ButtonBuilder()
-    .setCustomId(`change_wallet_${auction._id}`)
-    .setLabel("Change Wallet")
-    .setStyle(ButtonStyle.Secondary)
-    .setEmoji("🔄");
+//   const changeWalletButton = new ButtonBuilder()
+//     .setCustomId(`change_wallet_${auction._id}`)
+//     .setLabel("Change Wallet")
+//     .setStyle(ButtonStyle.Secondary)
+//     .setEmoji("🔄");
 
-  // Create action row with buttons
-  const row = new ActionRowBuilder().addComponents(
-    bidButton,
-    changeWalletButton
-  );
+//   // Create action row with buttons
+//   const row = new ActionRowBuilder().addComponents(
+//     bidButton,
+//     changeWalletButton
+//   );
 
-  return {
-    embed,
-    row,
-  };
-}
+//   return {
+//     embed,
+//     row,
+//   };
+// }
 
 async function collectPointsForWinners(interaction, contest) {
   const winnerCount = contest.numberOfWinners;
