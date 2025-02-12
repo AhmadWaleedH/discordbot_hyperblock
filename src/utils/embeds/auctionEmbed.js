@@ -107,16 +107,11 @@ const {
       .setEmoji(auction.blindAuction ? "🎫" : "💰")
       .setDisabled(auction.status !== "active");
   
-    const changeWalletButton = new ButtonBuilder()
-      .setCustomId(`change_wallet_${auction._id}`)
-      .setLabel("Change Wallet")
-      .setStyle(ButtonStyle.Secondary)
-      .setEmoji("🔄");
+    
   
     // Create action row with buttons
     const row = new ActionRowBuilder().addComponents(
-      bidButton,
-      ...(auction.status === "active" ? [changeWalletButton] : [])
+      bidButton
     );
   
     return {
