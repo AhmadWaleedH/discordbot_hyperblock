@@ -630,8 +630,7 @@ async function handleDeleteGiveaway(interaction) {
   const giveawayOptions = guildGiveaways.map((giveaway) => ({
     label: `${giveaway.raffleTitle} (${giveaway.entryCost} coins)`,
     description:
-      giveaway.description?.slice(0, 100) ||
-      `Ends on ${giveaway.endTime.toLocaleDateString()}`,
+      giveaway.description?.slice(0, 100) || 'No description given',
     value: giveaway._id.toString(),
     emoji: "🎟️",
   }));
