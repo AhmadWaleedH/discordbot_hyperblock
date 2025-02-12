@@ -646,7 +646,7 @@ async function handleDeleteGiveaway(interaction) {
     content,
     `delete_giveaway_select`,
     "🎟️ Choose a giveaway to view or enter...",
-    giveawayOptions
+    giveawayOptions, false
   );
 }
 
