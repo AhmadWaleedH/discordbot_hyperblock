@@ -8,6 +8,10 @@ const userSchema = new Schema({
   discordUserAvatarURL: String,
   walletAddress: { type: String },
   hyperBlockPoints: { type: Number },
+  subscription: {
+    type: new Schema({ tier: { type: String, default: "free" } }),
+    default: () => ({}),
+  },
   status: { type: String, enum: ["active", "inactive", "banned"] },
   socials: {
     x: { type: String }, // x is required
@@ -40,6 +44,11 @@ const userSchema = new Schema({
       guildId: { type: String, required: true },
       guildName: { type: String, required: true },
       guildIcon: String,
+      subscription: {
+        type: new Schema({ tier: { type: String, default: "free" } }),
+        default: () => ({}),
+      },
+      status: { type: String, default: "active" },
       joinedAt: { type: Date },
       points: { type: Number },
       activeRaids: { type: Number },
