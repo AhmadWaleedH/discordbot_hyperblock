@@ -824,7 +824,7 @@ async function handleFlipBag(interaction) {
         new ButtonBuilder()
             .setLabel("Customize")
             .setStyle(ButtonStyle.Link)
-            .setURL("https://yourlink.com")
+            .setURL("https://yourlnk.com")
       ),
     ],
   });
