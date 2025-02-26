@@ -4,6 +4,7 @@ const {
   ActionRowBuilder,
   ButtonStyle,
   ButtonBuilder,
+  EmbedBuilder,
 } = require("discord.js");
 const { parse, isValid, format } = require("date-fns");
 const Guilds = require("../../models/Guilds");
@@ -1054,6 +1055,85 @@ async function handleContestCreationModal(interaction) {
     ephemeral: true,
   });
 }
+
+
+async function handleEndGivewayModal(interaction, itemId){
+  try{
+
+  
+  const raffle_name = interaction.fields.getTextInputValue("raffle_name");
+
+  const giveaway = await Giveaway.findById(itemId);
+
+  if (!giveaway) {
+    return interaction.reply({
+      content: "Giveaway not found.",
+      ephemeral: true,
+    });
+  }
+
+  // Compare the raffle title with the user-provided raffle name
+  if (giveaway.raffleTitle.toLowerCase() !== raffle_name.toLowerCase().trim()) {
+    return interaction.reply({
+      content: "🎟️ Raffle Title does not match. Try again!",
+      ephemeral: true,
+    });
+  }
+
+
+  if (giveaway.isExpired || (giveaway.endTime && giveaway.endTime <= new Date())) {
+    return interaction.reply({
+      content: "⏰ This giveaway has already ended or expired.",
+      ephemeral: true,
+    });
+  }
+
+
+  const winners = selectRandomWinners(
+    giveaway.participants,
+    giveaway.numWinners
+  );
+
+  // Update giveaway with winners and mark as expired
+  giveaway.winners = winners.map((participant) => ({
+    userId: participant.userId,
+  }));
+  giveaway.isExpired = true;
+  await giveaway.save();
+
+  // Get the channel
+  const channel = await interaction.client.channels.fetch(giveaway.channelId);
+
+  // Send winner announcement to channel
+  const winnerEmbed = createWinnerEmbed(giveaway, winners);
+  await channel.send({ embeds: [winnerEmbed] });
+
+  // Notify winners via DM
+  for (const winner of winners) {
+    await notifyWinner(winner.userId, giveaway, interaction);
+  }
+
+  // If there's a winner role to assign
+  if (giveaway.winnerRole) {
+    const guild = await interaction.client.guilds.fetch(giveaway.guildId);
+    for (const winner of winners) {
+      try {
+        const member = await interaction.guild.members.fetch(winner.userId);
+        await member.roles.add(giveaway.winnerRole);
+      } catch (error) {
+        console.error(
+          `Failed to assign role to ${winner.userId}:`,
+          error
+        );
+      }
+    }
+  }
+
+  await interaction.reply({content : "giveaway Ended!", ephemeral: true})
+}catch(e){
+  console.log(e);
+}
+}
 module.exports = {
   handleSocialSetupSubmission,
   handleSocialRewardsSubmission,
@@ -1070,5 +1150,81 @@ module.exports = {
   handleChangeWalletModal,
   handleSocialSettingsModal,
   handleMintWalletModals,
+  handleEndGivewayModal,
   handleContestCreationModal,
 };
+
+
+
+
+function selectRandomWinners(participants, numWinners) {
+  // Step 1: Create a weighted pool that preserves each entry's chance
+  // but tracks which user each entry belongs to
+  const weightedPool = [...participants];
+  
+  // Step 2: Shuffle the weighted pool to randomize selection
+  const shuffledPool = weightedPool.sort(() => 0.5 - Math.random());
+  
+  // Step 3: Select winners ensuring no user is picked twice
+  const winners = [];
+  const selectedUserIds = new Set();
+  
+  // Keep drawing until we have enough winners or exhausted all participants
+  let poolIndex = 0;
+  while (winners.length < numWinners && poolIndex < shuffledPool.length) {
+    const currentEntry = shuffledPool[poolIndex];
+    
+    // If this user hasn't been selected yet, add them to winners
+    if (!selectedUserIds.has(currentEntry.userId)) {
+      winners.push(currentEntry);
+      selectedUserIds.add(currentEntry.userId);
+    }
+    
+    poolIndex++;
+  }
+  
+  return winners;
+}
+
+
+
+
+
+function createWinnerEmbed(giveaway, winners) {
+  return new EmbedBuilder()
+    .setTitle(`🎉 Giveaway Ended: ${giveaway.raffleTitle}`)
+    .setDescription(`Congratulations to the winners!`)
+    .addFields(
+      {
+        name: "Winners",
+        value: winners.map((w) => `<@${w.userId}>`).join("\n") || "No winners",
+      },
+      {
+        name: "Prize",
+        value: `Entry Cost: ${giveaway.entryCost} ${giveaway.chain}`,
+      },
+      { name: "Total Participants", value: `${giveaway.totalParticipants}` }
+    )
+    .setColor("#00FF00")
+    .setTimestamp();
+}
+
+
+async function notifyWinner(userId, giveaway, interaction) {
+  try {
+    const user = await interaction.client.users.fetch(userId);
+    const winnerEmbed = new EmbedBuilder()
+      .setTitle("🎉 Congratulations! You Won!")
+      .setDescription(`You have won the giveaway: ${giveaway.raffleTitle}`)
+      .addFields(
+        { name: "Prize", value: `${giveaway.entryCost} ${giveaway.chain}` },
+        { name: "Notes", value: giveaway.notes || "No additional notes" }
+      )
+      .setColor("#00FF00")
+      .setTimestamp();
+
+    await user.send({ embeds: [winnerEmbed] });
+  } catch (error) {
+    console.error(`Failed to DM winner ${userId}:`, error);
+  }
+}

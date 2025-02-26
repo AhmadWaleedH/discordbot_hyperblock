@@ -1232,9 +1232,10 @@ async function contestCreationSelect(interaction, id) {
   await contest.save();
 
   // Now start collecting the points for the winners
-  await interaction.reply({
+  await interaction.update({
     content: `Role assigned successfully! Now, let's collect points for the winners. You have ${contest.numberOfWinners} winners to provide points for.`,
     ephemeral: true,
+    components: [],
   });
 
   // Call the function to collect the points for winners

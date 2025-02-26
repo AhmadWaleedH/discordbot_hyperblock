@@ -40,7 +40,7 @@ async function generateCreditCardImage({
         ctx.restore();
 
         // Add text next to the icon
-        ctx.font = "bold 16px Arial"; // Bold font for better clarity
+        ctx.font = "bold 13px Arial"; // Bold font for better clarity
         ctx.fillStyle = "white"; // White text color
         const textWidth = ctx.measureText(text).width; // Measure text width to align
 
@@ -60,27 +60,7 @@ async function generateCreditCardImage({
   const backgroundImage = await loadImage(backgroundImagePath);
   ctx.drawImage(backgroundImage, 0, 0, width, height);
 
-  // Load the chip image
-  const chipImage = await loadImage(chipImagePath);
-  const chipWidth = 50;
-  const chipHeight = 50;
-  const xPosChip = width - chipWidth - 15;
-  const yPosChip = (height - chipHeight) / 2;
-  ctx.drawImage(chipImage, xPosChip, yPosChip, chipWidth, chipHeight);
 
-  // Load the bottom right image
-  const bottomRightImage = await loadImage(bottomRightImagePath);
-  const imageWidth = 40;
-  const imageHeight = 40;
-  const xPosBottomRight = width - imageWidth - 20;
-  const yPosBottomRight = height - imageHeight - 10;
-  ctx.drawImage(
-    bottomRightImage,
-    xPosBottomRight,
-    yPosBottomRight,
-    imageWidth,
-    imageHeight
-  );
 
   // Loop through the data for the icons and text
   for (const {

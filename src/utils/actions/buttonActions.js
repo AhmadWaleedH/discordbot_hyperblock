@@ -16,10 +16,13 @@ const sendSelectMenu = require("../selectMenuHandler");
 const Shop = require("../../models/Shop");
 const Giveaway = require("../../models/raffles");
 const User = require("../../models/Users");
-const { handlePurchase } = require("../commons");
+const { handlePurchase, generateItemEmbed } = require("../commons");
 const Auction = require("../../models/Auction");
 const { createCreditCardBackImage } = require("../canvas/back");
 const Contest = require("../../models/Contests");
+const EmbedMessages = require("../../models/EmbedMessages");
+const { generateCreditCardImage } = require("../canvas/front");
+const { generateCardImage } = require("../imgutil");
 
 const buttonOptions = [
   {
@@ -32,13 +35,13 @@ const buttonOptions = [
     label: "Meme",
     emoji: "🖊️",
     style: ButtonStyle.Primary,
-    customId: "fanart_fun",
+    customId: "meme_fun",
   },
   {
     label: "Community Fun",
     emoji: "👨",
     style: ButtonStyle.Primary,
-    customId: "fanart_fun",
+    customId: "community_fun",
   },
 ];
 
@@ -395,6 +398,32 @@ async function handleAddedPurchaseItems(interaction, id) {
 
           await user.save();
 
+          try{
+
+          
+
+          const item = await Shop.findById(id);
+        const { embed, row } = generateItemEmbed(item, i);
+        const embedMessage = await EmbedMessages.findOne({ itemId: id });
+        const { guildId, channelId, messageId } = embedMessage;
+        const guild = await i.client.guilds.cache.get(guildId);
+        if (!guild) return;
+        const channel = await guild.channels.cache.get(channelId);
+        if (!channel) return;
+        // Fetch the message and update it
+        const message = await channel.messages
+          .fetch(messageId)
+          .catch(console.error);
+        if (!message) return;
+
+        await message.edit({
+          embeds: [embed],
+          components: [row],
+        });
+      }catch(e) {
+        console.log(e)
+      }
+
           if (item.role) {
             try {
               const member = await i.guild.members.fetch(i.user.id);
@@ -421,6 +450,7 @@ async function handleAddedPurchaseItems(interaction, id) {
             });
           }
         } catch (error) {
+          console.log(error)
           await i.update({
             content: "An error occurred while processing your purchase.",
             embeds: [],
@@ -478,8 +508,10 @@ async function handleCreateGiveaway(interaction) {
   await showModal(interaction, "Add raffle", "add_raffle", fieldOptions);
 }
 
+
 async function joinGiveaway(interaction, id) {
   const giveaway = await Giveaway.findById(id);
+  console.log(giveaway)
   const userId = interaction.user.id;
   if (!giveaway) {
     return await interaction.reply({
@@ -530,6 +562,7 @@ async function joinGiveaway(interaction, id) {
       ephemeral: true,
     });
   }
+  
   if (!serverMembership || serverMembership.points < giveaway.entryCost) {
     return await interaction.reply({
       content: "Insufficient points in this server to enter the giveaway.",
@@ -538,7 +571,6 @@ async function joinGiveaway(interaction, id) {
   }
 
   // Check if the user is a member of the server
-
   if (giveaway.roleRequired) {
     const requiredRoleId = giveaway.roleRequired;
     const member = interaction.guild.members.cache.get(interaction.user.id);
@@ -550,23 +582,15 @@ async function joinGiveaway(interaction, id) {
     }
   }
 
-  if (
-    giveaway.entriesLimited &&
-    giveaway.totalParticipants >= giveaway.entriesLimited
-  ) {
-    return await interaction.reply({
-      content: "The giveaway has reached its maximum number of participants.",
-      ephemeral: true,
-    });
-  }
-
-  // Check if user has already participated
-  const isAlreadyParticipant = giveaway.participants.some(
+  // Check how many times this user has already participated
+  const userEntries = giveaway.participants.filter(
     (participant) => participant.userId === userId
-  );
-  if (isAlreadyParticipant) {
+  ).length;
+
+  // Check if user has reached their entry limit
+  if (giveaway.entriesLimited && userEntries >= giveaway.entriesLimited) {
     return await interaction.reply({
-      content: "You have already participated in this giveaway.",
+      content: `You have reached the maximum number of entries (${giveaway.entriesLimited}) for this giveaway.`,
       ephemeral: true,
     });
   }
@@ -580,8 +604,17 @@ async function joinGiveaway(interaction, id) {
   giveaway.totalParticipants += 1;
   await giveaway.save();
 
+  // Calculate remaining entries
+  const remainingEntries = giveaway.entriesLimited ? 
+    giveaway.entriesLimited - (userEntries + 1) : 
+    "unlimited";
+
   return await interaction.reply({
-    content: "You have successfully joined the giveaway!",
+    content: `You have successfully joined the giveaway! ${
+      typeof remainingEntries === 'number' ? 
+      `You have ${remainingEntries} entries remaining.` : 
+      `You can enter ${remainingEntries} times.`
+    }`,
     ephemeral: true,
   });
 }
@@ -711,93 +744,112 @@ async function handleBidAuction(interaction) {
 }
 
 async function handleFlipBag(interaction) {
-  console.log("here");
-  // Data for generating the image
-  const cardData = {
-    backgroundImagePath: "background.jpg",
-    chipImagePath: "chip.png",
-    iconsWithText: [
-      {
-        iconPath: "green.png",
-        text: "Utilities of Paid Users:",
-        iconSize: 14,
-        xPosIcon: 15,
-        yPosIcon: 25,
-      },
-      {
-        iconPath: "png.png",
-        text: "Create your card in your style",
-        iconSize: 14,
-        xPosIcon: 5,
-        yPosIcon: 65,
-      },
-      {
-        iconPath: "png.png",
-        text: "Earn HyperBlock Points while ",
-        iconSize: 14,
-        xPosIcon: 5,
-        yPosIcon: 85,
-      },
-      {
-        iconPath: "png.png",
-        text: "earning server's points",
-        iconSize: 14,
-        xPosIcon: 5,
-        yPosIcon: 105,
-      },
-      {
-        iconPath: "png.png",
-        text: "Auto-enrolled in HyperBlock raffles",
-        iconSize: 14,
-        xPosIcon: 5,
-        yPosIcon: 125,
-      },
-      {
-        iconPath: "png.png",
-        text: "with 888 points",
-        iconSize: 14,
-        xPosIcon: 5,
-        yPosIcon: 145,
-      },
-      {
-        iconPath: "whitearrow.png",
-        text: "Auto-discount applied at Merch Store.",
-        iconSize: 14,
-        xPosIcon: 5,
-        yPosIcon: 205,
-      },
-    ],
-    footerText: [
-      { text: "Future Airdrops from HyperBlock", xPos: 25, yPos: 175 },
-      { text: "& much more", xPos: 25, yPos: 193 },
-    ],
-  };
+  const customId = interaction.customId;
 
-  try {
-    // Generate the image and get the file path
-    const imagePath = await createCreditCardBackImage(cardData);
-    console.log(imagePath);
-    // // Create the attachment to send to Discord
-    // const attachment = new MessageAttachment(imagePath);
+  let imagePath, newCustomId, newContent;
 
-    // Send the image as a response
-    await interaction.update({
-      content: "Here is your generated credit card image:",
-      files: [imagePath],
-    });
-  } catch (err) {
-    console.error("Error generating the image:", err);
-    await interaction.update({
-      content:
-        "There was an error generating the credit card image. Please try again later.",
-    });
+  if (customId === "flip_to_back") {
+    // Generate BACK side image
+    const cardData = {
+      backgroundImagePath: "background.jpg",
+      chipImagePath: "chip.png",
+      iconsWithText: [
+        { iconPath: "green.png", text: "Utilities of Paid Users:", iconSize: 14, xPosIcon: 15, yPosIcon: 25 },
+        { iconPath: "png.png", text: "Create your card in your style", iconSize: 14, xPosIcon: 5, yPosIcon: 65 },
+        { iconPath: "png.png", text: "Earn HyperBlock Points while ", iconSize: 14, xPosIcon: 5, yPosIcon: 85 },
+        { iconPath: "png.png", text: "earning server's points", iconSize: 14, xPosIcon: 5, yPosIcon: 105 },
+        { iconPath: "png.png", text: "Auto-enrolled in HyperBlock raffles", iconSize: 14, xPosIcon: 5, yPosIcon: 125 },
+        { iconPath: "png.png", text: "with 888 points", iconSize: 14, xPosIcon: 5, yPosIcon: 145 },
+        { iconPath: "whitearrow.png", text: "Auto-discount applied at Merch Store.", iconSize: 14, xPosIcon: 5, yPosIcon: 205 },
+      ],
+      footerText: [
+        { text: "Future Airdrops from HyperBlock", xPos: 25, yPos: 175 },
+        { text: "& much more", xPos: 25, yPos: 193 },
+      ],
+    };
+
+    imagePath = await createCreditCardBackImage(cardData);
+    newCustomId = "flip_to_front"; // Next click flips to front
+    newContent = "Here is your credit card image (back side):";
+
+  } else if (customId === "flip_to_front") {
+    
+    const guildName = interaction.guild.name;
+      const userName = interaction.user.username;
+      const userId = interaction.user.id; // Get the Discord user ID from the interaction
+      const guildId = interaction.guildId;
+
+      const user = await User.findOne({ discordId: userId });
+
+
+      if (!user) {
+        return interaction.reply({
+          content: "User not found in the database.",
+          ephemeral: true,
+        });
+      }
+
+
+      const serverMembership = user.serverMemberships.find(
+        (membership) => membership.guildId === guildId
+      );
+
+      if (!serverMembership) {
+        return interaction.reply({
+          content: `No server membership found for this guild.`,
+          ephemeral: true,
+        });
+      }
+
+      console.log(interaction)
+
+      imagePath = await generateCardImage({interaction,user, serverMembership})
+
+    newCustomId = "flip_to_back"; // Next click flips to back
+    newContent = "Here is your credit card image (front side):";
+  } else {
+    return interaction.reply({ content: "Unknown flip action.", ephemeral: true });
   }
+
+  // Update the message with the new image and flip button
+  await interaction.update({
+    content: newContent,
+    files: [imagePath],
+    components: [
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(newCustomId)
+          .setLabel("Flip")
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+            .setLabel("Customize")
+            .setStyle(ButtonStyle.Link)
+            .setURL("https://yourlink.com")
+      ),
+    ],
+  });
 }
 
+
 async function handlePlaceBidAuction(interaction, id) {
+
+  const user = await User.findOne({ discordId : interaction.user.id });
+
+    if (!user) {
+      console.log("User not found");
+    }
+
+    const serverMembership = user.serverMemberships.find(
+      (membership) => membership.guildId === interaction.guildId
+    );
+
+    if (!serverMembership) {
+      console.log("Server membership not found");
+      return;
+    }
   const fieldOptions = [
     {
-      label: "Add the Amount to Bid",
+      label: `Your Points : ${serverMembership.points}`,
       customId: "bid_amount",
       placeholder: "Enter Bid Amount (1,2,4,5)",
       style: "Short",
@@ -946,6 +998,25 @@ async function handleJoinContest(interaction, itemId) {
     });
   }
 }
+
+
+async function handleEndRaffle(interaction, itemId){
+  const fieldOptions = [
+    {
+      label: "Raffle Name",
+      customId: "raffle_name",
+      placeholder: "Enter Raffle Name for verification",
+      style: "Short",
+    },
+  ];
+
+  await showModal(
+    interaction,
+    "Enter Raffle Name",
+    `enter_raffle_end_${itemId}`,
+    fieldOptions
+  );
+}
 module.exports = {
   handlePointsSetup,
   handleSocialRewards,
@@ -971,6 +1042,7 @@ module.exports = {
   handleContestButton,
   handleFunContestBtn,
   handleJoinContest,
+  handleEndRaffle
 };
 
 async function displayActiveAuctions(interaction, selectId) {

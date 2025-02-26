@@ -118,8 +118,14 @@ function createGiveawayEmbed(giveaway) {
     .setEmoji("🎟️")
     .setDisabled(giveaway.isExpired);
 
+    const endGiveawayButton = new ButtonBuilder()
+    .setCustomId(`endRaffleNow_${giveaway._id}`)
+    .setLabel(`End Raffle Now)`)
+    .setStyle(ButtonStyle.Danger)
+    .setEmoji("📣")
+    .setDisabled(giveaway.isExpired);
   // Create action row with buttons
-  const row = new ActionRowBuilder().addComponents(joinButton);
+  const row = new ActionRowBuilder().addComponents(joinButton, endGiveawayButton);
 
   return {
     embed: embed,

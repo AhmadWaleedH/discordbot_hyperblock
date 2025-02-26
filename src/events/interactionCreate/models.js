@@ -31,6 +31,14 @@ module.exports = async (client, interaction) => {
       await modelActions.handleAddRaffle(interaction);
       break;
 
+      case customId.startsWith("enter_raffle_end_"): {
+        const itemId = customId.split("enter_raffle_end_")[1];
+        await modelActions.handleEndGivewayModal(interaction, itemId);
+        break;
+      }
+
+    
+
     case customId.startsWith("add_raffle_description_"): {
       const itemId = customId.split("add_raffle_description_")[1];
       await modelActions.addRaffleOptionals(

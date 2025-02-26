@@ -7,9 +7,34 @@ const {
   endAuction,
 } = require("../../utils/jobs/auctionJob");
 const Auction = require("../../models/Auction");
+
 function selectRandomWinners(participants, numWinners) {
-  const shuffled = [...participants].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, Math.min(numWinners, participants.length));
+  // Step 1: Create a weighted pool that preserves each entry's chance
+  // but tracks which user each entry belongs to
+  const weightedPool = [...participants];
+  
+  // Step 2: Shuffle the weighted pool to randomize selection
+  const shuffledPool = weightedPool.sort(() => 0.5 - Math.random());
+  
+  // Step 3: Select winners ensuring no user is picked twice
+  const winners = [];
+  const selectedUserIds = new Set();
+  
+  // Keep drawing until we have enough winners or exhausted all participants
+  let poolIndex = 0;
+  while (winners.length < numWinners && poolIndex < shuffledPool.length) {
+    const currentEntry = shuffledPool[poolIndex];
+    
+    // If this user hasn't been selected yet, add them to winners
+    if (!selectedUserIds.has(currentEntry.userId)) {
+      winners.push(currentEntry);
+      selectedUserIds.add(currentEntry.userId);
+    }
+    
+    poolIndex++;
+  }
+  
+  return winners;
 }
 
 function createWinnerEmbed(giveaway, winners) {

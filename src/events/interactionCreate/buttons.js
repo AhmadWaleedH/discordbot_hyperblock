@@ -80,6 +80,14 @@ module.exports = async (client, interaction) => {
       await buttonActions.handleDeleteGiveaway(interaction);
       break;
 
+      case customId.startsWith("endRaffleNow_"): {
+        const itemId = customId.split("endRaffleNow_")[1];
+        await buttonActions.handleEndRaffle(interaction, itemId);
+        break;
+      }
+
+    
+
     // delete leaderboard ✅ - add auction ⏳
     case customId === "add_auction":
       await buttonActions.handleAddAuction(interaction);
@@ -113,7 +121,7 @@ module.exports = async (client, interaction) => {
       break;
     }
     // Change wallet ✅ - Flip ⏳
-    case customId === "flip":
+    case customId === "flip_to_back"  || customId === "flip_to_front":
       await buttonActions.handleFlipBag(interaction);
       break;
 
@@ -123,7 +131,7 @@ module.exports = async (client, interaction) => {
       await buttonActions.handleContestButton(interaction);
       break;
 
-    case customId === "fanart_fun":
+    case customId === "fanart_fun" || customId === "meme_fun" || customId === "community_fun":
       await buttonActions.handleFunContestBtn(interaction);
       break;
 
