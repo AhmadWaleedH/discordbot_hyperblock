@@ -1455,7 +1455,7 @@ async function createContestThread(interaction, contest) {
     // Send the embed and buttons to the newly created channel
     const savedChannel = await newChannel.send({
       content: `Welcome to the contest: **${contest.title}**! Please review the details below and choose your action.`,
-      embeds: [generateContestEmbed(contest)],
+      embeds: [generateContestEmbed(contest, interaction.client)],
       components: [buttonRow],
     });
 

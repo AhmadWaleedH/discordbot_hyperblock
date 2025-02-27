@@ -5,7 +5,6 @@ const contestSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-
   title: {
     type: String,
     required: true,
@@ -46,6 +45,7 @@ const contestSchema = new mongoose.Schema({
   votes: [
     {
       messageId: String, // The ID of the message
+      authorId: String,  // Add this field to store the message author ID
       userVotes: [
         {
           userId: String, // User ID of the person who voted

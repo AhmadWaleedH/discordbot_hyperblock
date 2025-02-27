@@ -40,10 +40,13 @@ module.exports = async (client) => {
             const allUsers = [...new Set(allVoters.map((vote) => vote.userId))]; // Get unique users
 
             for (const userId of allUsers) {
+              const discordUser = await client.users.fetch(userId); // Fetch user from Discord API
               let user = await User.findOne({ discordId: userId });
               if (!user) {
                 user = new User({
                   discordId: userId,
+                  discordUsername: discordUser.username,
+                  discordUserAvatarURL: discordUser.displayAvatarURL({ dynamic: true }),
                   status: "active",
                 });
               }
@@ -55,7 +58,12 @@ module.exports = async (client) => {
               if (serverMembership) {
                 serverMembership.points += contest.pointsForParticipants;
               } else {
+
+              const guild = await client.guilds.fetch(contest.guildId);
                 user.serverMemberships.push({
+                  guildId: contest.guildId,
+                  guildName: guild.name,
+                  guildIcon: guild.iconURL({ dynamic: true }),
                   guildId: contest.guildId,
                   points: contest.pointsForParticipants,
                 });
@@ -97,8 +105,12 @@ module.exports = async (client) => {
                 if (serverMembership) {
                   serverMembership.points += winnerPoints;
                 } else {
+                  const guild = await client.guilds.fetch(contest.guildId);
+                  
                   user.serverMemberships.push({
                     guildId: contest.guildId,
+                    guildName: guild.name,
+                    guildIcon: guild.iconURL({ dynamic: true }),
                     points: winnerPoints,
                   });
                 }

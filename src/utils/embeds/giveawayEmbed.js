@@ -87,7 +87,7 @@ function createGiveawayEmbed(giveaway) {
   if (giveaway.partnerTwitter) {
     embed.addFields({
       name: "🤝 Partner",
-      value: `[${giveaway.partnerTwitter}](https://twitter.com/${giveaway.partnerTwitter})`,
+      value: `[Partner](https://twitter.com/${giveaway.partnerTwitter})`,
       inline: false,
     });
   }

@@ -490,9 +490,9 @@ async function handleCreateGiveaway(interaction) {
       required: true,
     },
     {
-      label: "Entry Cost",
+      label: "Entry Cost (Server Points)",
       customId: "entry_cost",
-      placeholder: "Enter entry cost of the raffle",
+      placeholder: "Enter entry cost (Server Points)",
       style: "Short",
       required: true,
     },

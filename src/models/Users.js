@@ -4,7 +4,6 @@ const Schema = mongoose.Schema;
 const userSchema = new Schema({
   discordId: { type: String, required: true },
   discordUsername: { type: String, required: true },
-
   discordUserAvatarURL: String,
   walletAddress: { type: String },
   hyperBlockPoints: { type: Number },

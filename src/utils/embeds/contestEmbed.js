@@ -1,45 +1,57 @@
 const { EmbedBuilder } = require("discord.js");
 const ms = require("ms");
 
-function generateContestEmbed(contest) {
+function generateContestEmbed(contest, client) {
   // Format duration into a readable string
   const timeRemaining = contest.duration - new Date();
   const formattedDuration = ms(timeRemaining, { long: true });
 
-  // Counting the number of participants
-  const numberOfParticipants = contest.votes.reduce(
-    (acc, vote) => acc + vote.userVotes.length,
-    0
-  );
-
-  // Counting the total votes
-  const totalVotes = contest.votes.reduce(
-    (acc, vote) =>
-      acc +
-      vote.userVotes.reduce(
-        (subAcc, userVote) => subAcc + userVote.voteCount,
-        0
-      ),
-    0
-  );
-
-  // Compile the leaderboard with total votes for each user
-  let leaderboard = [];
-  contest.votes.forEach((voteEntry) => {
-    voteEntry.userVotes.forEach((userVote) => {
-      const userIndex = leaderboard.findIndex(
-        (user) => user.userId === userVote.userId
-      );
-      if (userIndex === -1) {
-        leaderboard.push({
-          userId: userVote.userId,
-          votes: userVote.voteCount,
-        });
-      } else {
-        leaderboard[userIndex].votes += userVote.voteCount;
+  // Create a map to track votes per message author
+  const authorVotesMap = new Map();
+  
+  // Process votes to count them by message author instead of by voter
+  contest.votes.forEach(async (voteEntry) => {
+    // Calculate total votes for this message
+    const totalVotesForMessage = voteEntry.userVotes.reduce(
+      (acc, userVote) => acc + userVote.voteCount, 
+      0
+    );
+    
+    try {
+      // Fetch the message to get its author
+      const channel = client.channels.cache.get(contest.channelId);
+      if (channel) {
+        // Try to get the message from cache or fetch it
+        let message;
+        try {
+          message = channel.messages.cache.get(voteEntry.messageId) || 
+                   await channel.messages.fetch(voteEntry.messageId);
+        } catch (error) {
+          console.error(`Error fetching message ${voteEntry.messageId}:`, error);
+          return; // Skip this message if it can't be fetched
+        }
+        
+        if (message) {
+          const authorId = message.author.id;
+          
+          // Add votes to the author's total
+          if (authorVotesMap.has(authorId)) {
+            authorVotesMap.set(authorId, authorVotesMap.get(authorId) + totalVotesForMessage);
+          } else {
+            authorVotesMap.set(authorId, totalVotesForMessage);
+          }
+        }
       }
-    });
+    } catch (error) {
+      console.error("Error processing votes for leaderboard:", error);
+    }
   });
+
+  // Convert map to array for sorting
+  let leaderboard = Array.from(authorVotesMap.entries()).map(([userId, votes]) => ({
+    userId,
+    votes
+  }));
 
   // Sort leaderboard by total votes, descending order
   leaderboard.sort((a, b) => b.votes - a.votes);
@@ -55,6 +67,20 @@ function generateContestEmbed(contest) {
   if (leaderboardText.length === 0) {
     leaderboardText = "No votes yet!";
   }
+
+  // Counting the number of participants (unique message authors)
+  const numberOfParticipants = authorVotesMap.size;
+
+  // Counting the total votes
+  const totalVotes = contest.votes.reduce(
+    (acc, vote) =>
+      acc +
+      vote.userVotes.reduce(
+        (subAcc, userVote) => subAcc + userVote.voteCount,
+        0
+      ),
+    0
+  );
 
   // Creating the embed
   const contestEmbed = new EmbedBuilder()
