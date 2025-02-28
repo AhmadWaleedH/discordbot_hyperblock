@@ -11,7 +11,7 @@ const userSchema = new Schema({
     type: new Schema({ tier: { type: String, default: "free" } }),
     default: () => ({}),
   },
-  userGlobalStatus: { type: String, enum: ["active", "inactive", "banned"] },
+  userGlobalStatus: { type: String, enum: ["active", "inactive", "banned"], default:'active' },
   socials: {
     x: { type: String }, // x is required
     tg: { type: String }, // Optional
