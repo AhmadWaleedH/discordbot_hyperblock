@@ -4,10 +4,10 @@ exports.channels = [
   "missions-hall", // becomes missionsHall in schema
   "stadium", // becomes stadium in schema
   "hyper-market", // becomes hyperMarket in schema
-  "hyper-notes", // becomes hyperNotes in schema
+   // becomes hyperNotes in schema
   "raffles",
 ];
-exports.UserChannels = ["events", "shop", "my-bag", "auctions", "raffles"];
+exports.UserChannels = ["events", "shop", "my-bag", "auctions","hyper-notes","raffles"];
 
 
 
