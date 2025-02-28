@@ -100,6 +100,7 @@ client.on("messageCreate", async (message) => {
         // If no vote entry for this message, create one
         contestEntry = {
           messageId: message.id,
+          authorId: message.author.id,
           userVotes: [],
         };
         contest.votes.push(contestEntry);
