@@ -5,6 +5,10 @@ const contestSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  guildName: {
+    type: String,
+    required: true,
+  },
   title: {
     type: String,
     required: true,
@@ -30,11 +34,19 @@ const contestSchema = new mongoose.Schema({
     type: String, // Role ID or name required to participate
     required: false,
   },
+  roleAssignedToParticipantName: {
+    type: String, // Role ID or name required to participate
+    required: false,
+  },
   isActive: {
     type: Boolean,
     required: false,
   },
   channelId: {
+    type: String,
+    required: false,
+  },
+  channelName: {
     type: String,
     required: false,
   },
@@ -44,12 +56,14 @@ const contestSchema = new mongoose.Schema({
   },
   votes: [
     {
-      messageId: String, // The ID of the message
-      authorId: String,  // Add this field to store the message author ID
+      messageId: String,
+      authorId: String,
+      authorName : String,
       userVotes: [
         {
-          userId: String, // User ID of the person who voted
-          voteCount: { type: Number, default: 0 }, // Vote count (e.g., 1 for upvote)
+          userId: String,
+          userName : String,
+          voteCount: { type: Number, default: 0 },
         },
       ],
     },
