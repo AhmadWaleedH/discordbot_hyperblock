@@ -171,6 +171,7 @@ if (guildDoc) {
 async function addItemRoleDropDown(interaction, id) {
   try {
     const selectedRoleId = interaction.values[0];
+    const selectedRole = interaction.guild.roles.cache.get(selectedRoleId);
     const shopItem = await ShopItem.findById(id);
     if (!shopItem) {
       return await interaction.update({
@@ -181,6 +182,7 @@ async function addItemRoleDropDown(interaction, id) {
       });
     }
     shopItem.role = selectedRoleId;
+    shopItem.roleName = selectedRole.name;
     await shopItem.save();
     const options = [
       {
@@ -364,6 +366,7 @@ async function addItemBlockChainDropDown(interaction, id) {
 }
 async function addItemRoleGateDropDown(interaction, id) {
   const selectedRoleId = interaction.values[0];
+  const selectedRole = interaction.guild.roles.cache.get(selectedRoleId);
   const shopItem = await ShopItem.findById(id);
   if (!shopItem) {
     return interaction.reply({
@@ -372,6 +375,7 @@ async function addItemRoleGateDropDown(interaction, id) {
     });
   }
   shopItem.requiredRoleToPurchase = selectedRoleId;
+  shopItem.requiredRoleToPurchaseName = selectedRole.name;
   await shopItem.save();
   await interaction.update({
     content: "Set the role successfully",
@@ -1249,12 +1253,13 @@ async function mintWalletSelect(interaction) {
 
 async function contestCreationSelect(interaction, id) {
   const selectedId = interaction.values[0];
-
+  const selectedRole = interaction.guild.roles.cache.get(selectedId); 
   // Find the contest from the database
   const contest = await Contest.findById(id);
 
   // Save the selected role to the contest document
   contest.roleAssignedToParticipant = selectedId;
+  contest.roleAssignedToParticipantName = selectedRole.name;
   await contest.save();
 
   // Now start collecting the points for the winners
@@ -1442,6 +1447,7 @@ async function createContestThread(interaction, contest) {
     });
 
     contest.channelId = newChannel.id;
+    contest.channelName = newChannel.name;
     await contest.save();
     const roleId = contest.roleAssignedToParticipant;
 

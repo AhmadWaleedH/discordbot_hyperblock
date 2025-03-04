@@ -811,7 +811,8 @@ async function handleBidAmountModal(interaction, id) {
     id,
     interaction.user.id,
     bid_amount,
-    interaction.guildId
+    interaction.guildId,
+    interaction.user.username,
   );
 
   const auction = await Auction.findById(id)
@@ -1038,6 +1039,7 @@ async function handleContestCreationModal(interaction) {
   const endTime = new Date(Date.now() + durationMs);
   const contest = new Contest({
     guildId: interaction.guild.id,
+    guildName : interaction.guild.name,
     title,
     duration: endTime,
     numberOfWinners: parseInt(winners),

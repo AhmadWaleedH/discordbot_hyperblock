@@ -108,49 +108,7 @@ client.on("messageCreate", async (message) => {
     console.error("Error in messageCreate event:", error);
   }
 });
-client.on("messageCreate", async (message) => {
-  // Ignore messages from bots or that are not in text channels
-  if (message.author.bot || message.channel.type !== 0) return;
 
-  try {
-    // Fetch all active contests with a channelId
-    const contests = await Contest.find({
-      isActive: true,
-      channelId: { $exists: true },
-    });
-
-    // Check if the message was sent in one of those contest channels
-    const contest = contests.find((c) => c.channelId === message.channel.id);
-
-    if (contest) {
-      if (new Date() > contest.duration) {
-        return;
-      }
-      // Add a ⬆️ (upvote) reaction to the message
-      await message.react("⬆️");
-
-      // Check if the contest already has a vote record for this message
-      let contestEntry = contest.votes.find(
-        (vote) => vote.messageId === message.id
-      );
-
-      if (!contestEntry) {
-        // If no vote entry for this message, create one
-        contestEntry = {
-          messageId: message.id,
-          authorId: message.author.id,  // Store the message author ID
-          userVotes: [],
-        };
-        contest.votes.push(contestEntry);
-      }
-
-      // Save the updated contest document
-      await contest.save();
-    }
-  } catch (error) {
-    console.error("Error processing messageCreate event:", error);
-  }
-});
 
 // Contest FUN ART EVENT MESSAGE ADD EVENT
 client.on("messageCreate", async (message) => {
@@ -184,6 +142,7 @@ client.on("messageCreate", async (message) => {
         contestEntry = {
           messageId: message.id,
           authorId: message.author.id,
+          authorName : message.author.username,
           userVotes: [],
         };
         contest.votes.push(contestEntry);
@@ -272,6 +231,7 @@ client.on("messageReactionAdd", async (reaction, user) => {
           // If the user hasn't voted on this message, add a new vote record
           contestEntry.userVotes.push({
             userId: user.id,
+            userName : user.username,
             voteCount: 1, // First time vote
           });
         }

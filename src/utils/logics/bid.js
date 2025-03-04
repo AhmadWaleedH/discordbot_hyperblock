@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-async function placeBid(auctionId, userId, bidAmount, guildId) {
+async function placeBid(auctionId, userId, bidAmount, guildId, username) {
   // Start a MongoDB session for transaction
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -54,7 +54,8 @@ async function placeBid(auctionId, userId, bidAmount, guildId) {
       user,
       bidAmount,
       serverMembership,
-      session
+      session,
+      username
     );
     if (!bidResult.success) {
       await session.abortTransaction();
@@ -132,7 +133,7 @@ async function validateBid(auction, user, bidAmount, guildId) {
   return null; // No validation errors
 }
 
-async function processBid(auction, user, bidAmount, serverMembership, session) {
+async function processBid(auction, user, bidAmount, serverMembership, session, userName) {
   try {
     // Refund previous bid if exists
     if (auction.currentBidder === user.discordId) {
@@ -162,9 +163,6 @@ async function processBid(auction, user, bidAmount, serverMembership, session) {
     // Update auction with new bid
     auction.currentBid = bidAmount;
     auction.currentBidder = user.discordId;
-    const user = await interaction.client.users.fetch(user.discordId);
-const userName = user.username; // Get the username
-
     const bidEntry = {
       userId: user.discordId,
       userName,
