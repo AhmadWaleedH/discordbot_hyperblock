@@ -279,13 +279,13 @@ module.exports = {
       const missionsHallChannelId = doc.botConfig.channels.missionsHall;
       const stadiumChannelId = doc.botConfig.channels.stadium;
       const rafflesChannelId = doc.botConfig.channels.raffles;
-      const hyperNotesChannelId = doc.botConfig.channels.hyperNotes;
       // user channels
       const eventChannelId = doc.botConfig.userChannels.events;
       const myBagChannelId = doc.botConfig.userChannels.myBag;
       const userRafflesChannelId = doc.botConfig.userChannels.raffles;
       const shopChannelId = doc.botConfig.userChannels.shop;
       const auctionsChannelId = doc.botConfig.userChannels.auctions;
+      const hyperNotesChannelId = doc.botConfig.userChannels.hyperNotes;
       const message =
         "Tracks all member activities, rewards, and bot interactions for transparency and audit purposes";
       const missionHallMessage =
