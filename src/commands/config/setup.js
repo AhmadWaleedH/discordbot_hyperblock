@@ -429,6 +429,6 @@ async function sendEmbedMessage(client, channelId, description) {
     await channel.send({ embeds: [embed] });
     console.log(`Embed sent to channel: ${channelId}`);
   } catch (error) {
-    console.error(`Failed to send embed: ${error.message}`);
+    console.error( error);
   }
 }

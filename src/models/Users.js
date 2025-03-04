@@ -43,10 +43,6 @@ const userSchema = new Schema({
       guildId: { type: String, required: true },
       guildName: { type: String, required: true },
       guildIcon: String,
-      subscription: {
-        type: new Schema({ tier: { type: String, default: "free" } }),
-        default: () => ({}),
-      },
       status: { type: String, default: "active" },
       joinedAt: { type: Date },
       points: { type: Number , default:0},

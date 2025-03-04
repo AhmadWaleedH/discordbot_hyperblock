@@ -59,12 +59,9 @@ const serverSchema = new Schema({
       messagePoints: { type: Number },
     },
   },
-  subscription: {
-    tier: { type: String, enum: ["Free", "Gold", "Diamond", "Platinum"] },
-    startDate: { type: Date },
-    endDate: { type: Date },
-    autoRenew: { type: Boolean },
-  },
+  subscription: {type: new Schema( {
+    tier: { type: String , default:'free'},
+  }),  default:()=>({})},
   analytics:{type: new Schema({
     CAS: { type: Number, default: 0 }, 
     CHS: { type: Number, default: 0 },
