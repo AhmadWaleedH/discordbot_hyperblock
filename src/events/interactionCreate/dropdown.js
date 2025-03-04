@@ -64,7 +64,8 @@ module.exports = async (client, interaction) => {
       await dropdownActions.addRaffleOptionalsDb(
         interaction,
         itemId,
-        "winnerRole"
+        "winnerRole",
+        true
       );
       break;
     }
@@ -73,7 +74,7 @@ module.exports = async (client, interaction) => {
       await dropdownActions.addRaffleOptionalsDb(
         interaction,
         itemId,
-        "roleRequired"
+        "roleRequired",true
       );
       break;
     }

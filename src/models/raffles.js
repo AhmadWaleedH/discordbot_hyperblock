@@ -1,14 +1,18 @@
 const mongoose = require("mongoose");
 const participantSchema = new mongoose.Schema({
   userId: { type: String, required: true },
+  userName: { type: String, required: true },
 });
 
 const winnersSchema = new mongoose.Schema({
   userId: { type: String, required: true },
+  userName: { type: String, required: true },
 });
 const giveawaySchema = new mongoose.Schema({
   guildId: { type: String, required: true },
+  guildName: { type: String, required: true },
   channelId: { type: String, required: false },
+  channelName: { type: String, required: false },
   messageId: { type: String, required: false },
   raffleTitle: { type: String, required: true },
   numWinners: { type: Number, required: true },
@@ -21,7 +25,9 @@ const giveawaySchema = new mongoose.Schema({
   description: String,
   partnerTwitter: String,
   winnerRole: String,
+  winnerRoleName: String,
   roleRequired: String,
+  roleRequiredName: String,
   entriesLimited: Number,
   notes: String,
   totalParticipants: { type: Number, default: 0 },

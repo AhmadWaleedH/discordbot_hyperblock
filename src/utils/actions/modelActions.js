@@ -424,6 +424,7 @@ async function handleAddRaffle(interaction) {
   }
   const giveaway = new Giveaway({
     guildId: interaction.guildId,
+    guildName:interaction.guild.name,
     raffleTitle: raffleTitle,
     numWinners: numWinners,
     entryCost: entryCost,
@@ -592,6 +593,7 @@ async function addGiveawayTimer(interaction, id) {
     });
     giveaway.messageId = sentMessage.id;
     giveaway.channelId = raffleChannelId;
+    giveaway.channelName = raffleChannel.name;
     await giveaway.save();
   } catch (error) {
     console.error(error);
@@ -1100,6 +1102,7 @@ async function handleEndGivewayModal(interaction, itemId){
   // Update giveaway with winners and mark as expired
   giveaway.winners = winners.map((participant) => ({
     userId: participant.userId,
+    userName:participant.userName
   }));
   giveaway.isExpired = true;
   await giveaway.save();

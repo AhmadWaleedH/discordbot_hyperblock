@@ -142,6 +142,7 @@ async function processExpiredGiveaways(client) {
         // Update giveaway with winners and mark as expired
         giveaway.winners = winners.map((participant) => ({
           userId: participant.userId,
+          userName: participant.userName,
         }));
         giveaway.isExpired = true;
         await giveaway.save();

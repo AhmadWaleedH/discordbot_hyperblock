@@ -55,12 +55,12 @@ async function handlePurchase(userId, itemId, userRoles, guildId) {
     }
 
     // Check account status
-    if (user.status !== "active") {
-      return {
-        success: false,
-        message: "Your account status does not allow purchases.",
-      };
-    }
+    // if (user.status !== "active") {
+    //   return {
+    //     success: false,
+    //     message: "Your account status does not allow purchases.",
+    //   };
+    // }
 
     if (typeof item.price !== "number") {
       return { success: false, message: "Invalid item price or user points." };

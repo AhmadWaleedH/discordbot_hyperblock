@@ -544,8 +544,7 @@ async function purchaseItemDropDown(interaction) {
 async function addRaffleOptionalDropDown(interaction, id) {
   console.log(interaction.guildId);
   const doc = await Guilds.findOne({ guildId: interaction.guildId });
-  console.log(doc);
-  const raffleChannelId = doc.botConfig.channels.raffles;
+
   const selectedOption = interaction.values[0];
   let modalCustomId;
   switch (selectedOption) {
@@ -666,13 +665,21 @@ async function addRaffleOptionalDropDown(interaction, id) {
       console.log("Unknown selection.");
   }
 }
-async function addRaffleOptionalsDb(interaction, id, dbKey) {
-  const value = await interaction.values[0];
+async function addRaffleOptionalsDb(interaction, id, dbKey, isRole) {
+  const value = 
+   interaction.values[0];
+
+   
+  let role 
+  if(isRole) role = interaction.guild.roles.cache.get(value)
+
+    
   await updateGiveaway(
     interaction,
     id,
     {
       [dbKey]: value,
+      ...(isRole && {[`${dbKey}Name`]:role.name})
     },
     true
   );

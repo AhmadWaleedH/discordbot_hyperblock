@@ -545,12 +545,12 @@ async function joinGiveaway(interaction, id) {
   }
 
   // Check if user is active and not banned
-  if (user.status !== "active") {
-    return await interaction.reply({
-      content: "Your account is not eligible to join.",
-      ephemeral: true,
-    });
-  }
+  // if (user.status !== "active") {
+  //   return await interaction.reply({
+  //     content: "Your account is not eligible to join.",
+  //     ephemeral: true,
+  //   });
+  // }
 
   const serverMembership = user.serverMemberships.find(
     (membership) => membership.guildId === interaction.guildId
@@ -600,7 +600,7 @@ async function joinGiveaway(interaction, id) {
   await user.save();
 
   // Add user to giveaway participants and increment the count
-  giveaway.participants.push({ userId });
+  giveaway.participants.push({ userId , userName:interaction.user.username});
   giveaway.totalParticipants += 1;
   await giveaway.save();
 
@@ -610,11 +610,7 @@ async function joinGiveaway(interaction, id) {
     "unlimited";
 
   return await interaction.reply({
-    content: `You have successfully joined the giveaway! ${
-      typeof remainingEntries === 'number' ? 
-      `You have ${remainingEntries} entries remaining.` : 
-      `You can enter ${remainingEntries} times.`
-    }`,
+    content: `You have successfully joined the giveaway!`,
     ephemeral: true,
   });
 }
