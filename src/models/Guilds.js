@@ -65,25 +65,16 @@ const serverSchema = new Schema({
     endDate: { type: Date },
     autoRenew: { type: Boolean },
   },
-  analytics: {
+  analytics:{type: new Schema({
     CAS: { type: Number, default: 0 }, 
     CHS: { type: Number, default: 0 },
     EAS: { type: Number, default: 0 },
     CCS: { type: Number, default: 0 },
     ERC: { type: Number, default: 0 },
-    rating: { type: String, enum: ["S", "A", "B", "C", "D"] },
-    rank: { type: Number },
-    isTop10: { type: Boolean },
-    metrics: {
-      activeUsers: { type: Number },
-      messageCount: { type: Number },
-      taskCompletion: { type: Number },
-      pointsUsage: { type: Number },
-      chatHealth: { type: Number },
-    },
     vault: { type: Number, default: 0 },
     reservedPoints: { type: Number, default: 0 },
-  },
+  }), default:()=> ({})
+},
   shop: [{ type: Schema.Types.ObjectId, ref: "ShopItem" }],
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
