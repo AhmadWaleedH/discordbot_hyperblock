@@ -162,8 +162,12 @@ async function processBid(auction, user, bidAmount, serverMembership, session) {
     // Update auction with new bid
     auction.currentBid = bidAmount;
     auction.currentBidder = user.discordId;
+    const user = await interaction.client.users.fetch(user.discordId);
+const userName = user.username; // Get the username
+
     const bidEntry = {
       userId: user.discordId,
+      userName,
       bidAmount: bidAmount,
       timestamp: new Date(),
     };

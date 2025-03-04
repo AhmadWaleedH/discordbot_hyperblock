@@ -22,17 +22,22 @@ const auctionSchema = new mongoose.Schema(
     roleForWinner: {
       type: String,
       required: false,
-    }, // Role ID that will be assigned to the winner
+    },
+    roleForWinnerName: {
+      type: String,
+      required: false,
+    },
     guildId: {
       type: String,
       required: true,
-    }, // ID of the server where the auction is hosted
+    },
+    guildName: {
+      type: String,
+      required: true,
+    },
     description: {
       type: String,
-    }, // Optional description of the item
-    roleRequired: {
-      type: String,
-    }, // Optional role needed to bid
+    },
     minimumBid: {
       type: Number,
       default: 0,
@@ -53,7 +58,11 @@ const auctionSchema = new mongoose.Schema(
         userId: {
           type: String,
           required: true,
-        }, // ID of the user who placed the bid
+        }, 
+        userName: {
+          type: String,
+          required: true,
+        },
         bidAmount: {
           type: Number,
           required: true,
@@ -77,6 +86,9 @@ const auctionSchema = new mongoose.Schema(
       userId: {
         type: String,
       }, // ID of the winner
+      userName: {
+        type: String,
+      },
       winningBid: {
         type: Number,
       }, // Winning bid amount

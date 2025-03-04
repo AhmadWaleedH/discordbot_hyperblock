@@ -623,7 +623,9 @@ async function addRaffleOptionals(
 
 async function addAuctionModal(interaction) {
   try {
+   
     const guildId = interaction.guildId;
+    const guildName = interaction.guild.name; // Get the guild name
     const name = interaction.fields.getTextInputValue("item_name").trim();
     const chain = interaction.fields.getTextInputValue("item_chain").trim();
     const description =
@@ -675,6 +677,7 @@ async function addAuctionModal(interaction) {
     // Create the auction document
     const newAuction = new Auction({
       guildId,
+      guildName,
       name,
       chain,
       description,

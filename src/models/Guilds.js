@@ -3,11 +3,9 @@ const serverSchema = new Schema({
   guildId: { type: String, required: true },
   guildName: { type: String, required: true },
   guildIconURL: String,
-  ownerDiscordId: { type: String, required: true },
   twitterUrl: { type: String },
   category: String,
   userCategory: String,
-  announcementChannelId: { type: String, required: false },
   botConfig: {
     enabled: { type: Boolean },
     prefix: { type: String },
@@ -31,18 +29,20 @@ const serverSchema = new Schema({
       auctions: { type: String },
     },
     chats: {
-      channels: {
-        type: [String],
-        default: [],
+      channelId: {
+        type: String,
+      },
+      channelName : {
+        type: String,
       },
       cooldown: { type: Number, default: 0 },
       points: { type: Number, default: 0 },
     },
     reactions: {
-      channels: {
-        type: [String],
-        default: [],
+      channelId: {
+        type: String,
       },
+      channelName: { type: String},
       cooldown: { type: Number, default: 0 },
       points: { type: Number, default: 0 },
     },

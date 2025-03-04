@@ -69,12 +69,14 @@ async function endAuction(auction, client) {
           value: `<t:${endTimeUnix}:R>`,
         }
       );
-
+      const winnerUser = await interaction.client.users.fetch(winner.discordId);
+      const winnerUsername = winnerUser.username;
     // Update the auction status and winner
     auction.status = "ended";
     if (winner) {
       auction.winner = {
         userId: winner.discordId,
+        userName : winnerUsername,
         winningBid: winner.winningBid,
       };
 

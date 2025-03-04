@@ -199,7 +199,6 @@ module.exports = {
           guildId,
           guildName: guild.name,
           guildIconURL: guild.iconURL(),
-          ownerDiscordId,
           botConfig: {
             channels: {},
           },

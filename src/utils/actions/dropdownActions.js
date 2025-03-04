@@ -87,11 +87,18 @@ async function teamSetupAdminRole(interaction) {
   }
 }
 async function pointsSetupAdminRole(interaction) {
+
+  const selectedChannelId = interaction.values[0]; // Get selected channel ID
+const selectedChannel = interaction.guild.channels.cache.get(selectedChannelId); // Get channel object
+
+if (!selectedChannel) {
+  return interaction.reply({ content: "Invalid channel selected.", ephemeral: true });
+}
   const guildId = interaction.guildId;
-  const channelIds = interaction.values;
   let guildDoc = await Guilds.findOne({ guildId });
   if (guildDoc) {
-    guildDoc.botConfig.chats.channels = channelIds;
+    guildDoc.botConfig.chats.channelId = selectedChannelId;
+    guildDoc.botConfig.chats.channelName = selectedChannel.name;
     await guildDoc.save();
     const fieldOptions = [
       {
@@ -122,11 +129,18 @@ async function pointsSetupAdminRole(interaction) {
 }
 async function reactionRewardSetup(interaction) {
   const guildId = interaction.guildId;
-  const channelIds = interaction.values;
-  let guildDoc = await Guilds.findOne({ guildId });
-  if (guildDoc) {
-    guildDoc.botConfig.reactions.channels = channelIds;
-    await guildDoc.save();
+const selectedChannelId = interaction.values[0]; // Since max values = 1, only one channel is selected
+const selectedChannel = interaction.guild.channels.cache.get(selectedChannelId); // Get channel object
+
+if (!selectedChannel) {
+  return interaction.reply({ content: "Invalid channel selected.", ephemeral: true });
+}
+
+let guildDoc = await Guilds.findOne({ guildId });
+if (guildDoc) {
+  guildDoc.botConfig.reactions.channelId = selectedChannelId;
+  guildDoc.botConfig.reactions.channelName = selectedChannel.name;
+  await guildDoc.save();
     const fieldOptions = [
       {
         label: "Time (in minutes)",
@@ -972,8 +986,13 @@ async function deleteRaffleDropdown(interaction) {
 
 async function addAuctionRoleDropdown(interaction, itemId) {
   const selectedRoleId = interaction.values[0];
+  const selectedRole = interaction.guild.roles.cache.get(selectedRoleId);
+  if (!selectedRole) {
+    return interaction.reply({ content: "Invalid role selected.", ephemeral: true });
+  }
   const auction = await Auction.findById(itemId);
   auction.roleForWinner = selectedRoleId;
+  auction.roleForWinnerName = selectedRole.name;
   auction.save();
 
   const options = [

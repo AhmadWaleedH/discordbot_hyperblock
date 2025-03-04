@@ -25,6 +25,89 @@ const client = new Client({
 
 eventHandler(client);
 
+
+client.on("messageCreate", async (message) => {
+  if (message.author.bot) return;
+
+  try {
+    const guildConfig = await Guilds.findOne({
+      guildId: message.guild.id,
+    });
+    if (!guildConfig) return;
+
+    const { channelId, cooldown, points } = guildConfig.botConfig.chats;
+    if (channelId !== message.channel.id) return;
+
+    const cooldownKey = `${message.author.id}-${message.guild.id}`;
+    const userCooldown = userCooldowns.get(cooldownKey);
+    const now = Date.now();
+
+    if (userCooldown && userCooldown > now) {
+      return;
+    }
+
+    userCooldowns.set(cooldownKey, now + cooldown);
+
+    let user = await User.findOne({
+      discordId: message.author.id,
+    });
+
+    if (!user) {
+      user = new User({
+        discordId: message.author.id,
+        discordUsername: message.author.username,
+        discordUserAvatarURL: message.author.displayAvatarURL(),
+        status: "active",
+        serverMemberships: [
+          {
+            guildId: message.guild.id,
+            guildName: message.guild.name,
+            guildIcon: message.guild.iconURL(),
+            joinedAt: new Date(),
+            points: 0,
+            activeRaids: 0,
+            completedTasks: 0,
+          },
+        ],
+      });
+    } else {
+      let serverMembership = user.serverMemberships.find(
+        (membership) => membership.guildId === message.guild.id
+      );
+
+      if (!serverMembership) {
+        serverMembership = {
+          guildId: message.guild.id,
+          guildName: message.guild.name,
+          guildIcon: message.guild.iconURL(),
+          joinedAt: new Date(),
+          points: 0,
+          activeRaids: 0,
+          completedTasks: 0,
+        };
+        user.serverMemberships.push(serverMembership);
+      }
+    }
+
+    // Add points to user's server membership
+    const membershipIndex = user.serverMemberships.findIndex(
+      (membership) => membership.guildId === message.guild.id
+    );
+
+    if (membershipIndex !== -1) {
+      user.serverMemberships[membershipIndex].points += points;
+      user.lastActive = new Date();
+
+      // Optionally notify user about points earned (uncomment if needed)
+      await message.reply(`You earned ${points} points!`);
+    }
+
+    // Save user changes
+    await user.save();
+  } catch (error) {
+    console.error("Error in messageCreate event:", error);
+  }
+});
 client.on("messageCreate", async (message) => {
   // Ignore messages from bots or that are not in text channels
   if (message.author.bot || message.channel.type !== 0) return;

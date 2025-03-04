@@ -14,17 +14,17 @@ module.exports = async (client, messageReaction, user) => {
     const { botConfig } = g;
     if (!botConfig) return;
 
-    if (!botConfig.reactions?.channels?.length)
+    if (!botConfig.reactions?.channelId) 
       return console.log("Reaction not setup");
-
-    const { channels, cooldown, points } = botConfig.reactions;
-
+    
+    const { channelId, cooldown, points } = botConfig.reactions;
+    
     console.log(message.createdAt);
-
+    
     if (Date.now() > message.createdAt.getTime() + cooldown)
       return console.log("Reaction received but time expired");
-
-    if (!channels.includes(message.channelId)) return;
+    
+    if (channelId !== message.channelId) return;
 
     const userDoc = await Users.findOne({ discordId: user.id });
 
@@ -55,8 +55,9 @@ module.exports = async (client, messageReaction, user) => {
         points,
       });
     if (membership) membership.points += points;
-
+    console.log(userDoc)
     await userDoc.save();
+
   } catch (error) {
     console.log(error);
   }
