@@ -57,7 +57,6 @@ client.on("messageCreate", async (message) => {
         discordId: message.author.id,
         discordUsername: message.author.username,
         discordUserAvatarURL: message.author.displayAvatarURL(),
-        status: "active",
         serverMemberships: [
           {
             guildId: message.guild.id,

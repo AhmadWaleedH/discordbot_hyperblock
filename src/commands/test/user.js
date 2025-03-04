@@ -23,7 +23,6 @@ module.exports = {
         discordId: interaction.user.id,
         walletAddress: "0x1234567890abcdef1234567890abcdef12345678",
         hyperBlockPoints: 100,
-        status: "active",
         socialAccounts: {
           twitter: {
             id: "123456789",

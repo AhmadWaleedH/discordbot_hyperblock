@@ -102,7 +102,7 @@ async function endAuction(auction, client) {
 
     console.log(`Auction ${auction._id} has ended.`);
   } catch (error) {
-    console.error(`Error ending auction ${auction._id}:`, error);
+    console.log(error);
   }
 }
 

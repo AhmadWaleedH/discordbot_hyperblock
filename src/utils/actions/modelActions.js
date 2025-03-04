@@ -922,7 +922,6 @@ async function handleSocialSettingsModal(interaction) {
         discordUsername: interaction.user.username,
         discordUserAvatarURL: interaction.user.displayAvatarURL(),
         socials,
-        status: "active", // Default status or customize as needed
       });
 
       // Optionally, you can set walletAddress and hyperBlockPoints here
@@ -984,7 +983,6 @@ async function handleMintWalletModals(interaction, itemId) {
       discordId: userId,
       discordUsername: interaction.user.username,
       discordUserAvatarURL: interaction.user.displayAvatarURL(),
-      status: "active",
       mintWallets: {},
     });
   }
