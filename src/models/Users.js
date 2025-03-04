@@ -52,6 +52,7 @@ const userSchema = new Schema({
       points: { type: Number },
       activeRaids: { type: Number },
       completedTasks: { type: Number },
+      userType : {type :String, default : "member"}
     },
   ],
   purchases: [

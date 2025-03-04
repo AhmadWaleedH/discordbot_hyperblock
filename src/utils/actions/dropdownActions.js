@@ -37,7 +37,31 @@ async function teamSetupAdminRole(interaction) {
 
   const roleIds = interaction.values;
   const guildId = interaction.guildId;
+  const members = await interaction.guild.members.fetch();
 
+  // Filter members who have at least one of the specified roles
+  const filteredMembers = members.filter(member =>
+    member.roles.cache.some(role => roleIds.includes(role.id))
+  );
+  console.log(filteredMembers);
+  for (const [,member] of filteredMembers) {
+    const user = await User.findOne({ discordId: member.id });
+
+    if (!user) {
+      console.log(`User ${member.user.username} not found in the database.`);
+      continue;
+    }
+
+    // Update userType to 'admin' in the specific serverMembership
+    user.serverMemberships.forEach(membership => {
+      if (membership.guildId === guildId) {
+        membership.userType = "admin";
+      }
+    });
+
+    await user.save();
+    console.log(`Updated userType to admin for ${member.user.username}`);
+  }
   const roles = roleIds.map((r) => {
     const role = interaction.guild.roles.cache.get(r);
     return {
