@@ -49,6 +49,8 @@ async function teamSetupAdminRole(interaction) {
 
     if (!user) {
       console.log(`User ${member.user.username} not found in the database.`);
+
+      await User.create({discordId:member.id,discordUsername: member.user.username, discordUserAvatarURL: member.displayAvatarURL(), serverMemberships:[{guildId:interaction.guild.id, guildName: interaction.guild.name, guildIcon: interaction.guild.iconURL(), userType:'admin'}] })
       continue;
     }
 

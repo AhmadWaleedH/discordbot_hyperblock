@@ -49,9 +49,9 @@ const userSchema = new Schema({
       },
       status: { type: String, default: "active" },
       joinedAt: { type: Date },
-      points: { type: Number },
-      activeRaids: { type: Number },
-      completedTasks: { type: Number },
+      points: { type: Number , default:0},
+      activeRaids: { type: Number , default:0},
+      completedTasks: { type: Number , default:0},
       userType : {type :String, default : "member"}
     },
   ],
