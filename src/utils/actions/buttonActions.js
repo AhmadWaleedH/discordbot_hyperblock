@@ -7,6 +7,9 @@ const {
   ButtonBuilder,
   ButtonStyle,
   StringSelectMenuBuilder,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
 } = require("discord.js");
 
 const Guilds = require("../../models/Guilds");
@@ -209,6 +212,113 @@ async function handlePointsSetupReactionRewards(interaction) {
     components: [row],
   });
 }
+
+
+
+async function handleTweetEventCreate(interaction) {
+
+    const guild = await Guilds.findOne({ guildId: interaction.guildId })
+
+  if (!guild) {
+    return await interaction.reply({
+      content: "Not setup yet",
+      ephemeral: true,
+    });
+  }
+  const curTime = Date.now()
+  const modal = new ModalBuilder()
+    .setCustomId(`tweet_modal_${curTime}`)
+    .setTitle("Enter Tweet Link");
+
+  // Create text input for the tweet link
+  const tweetInput = new TextInputBuilder()
+    .setCustomId("tweet_link")
+    .setLabel("Tweet URL")
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder("Enter the tweet link here...");
+
+  const row = new ActionRowBuilder().addComponents(tweetInput);
+  modal.addComponents(row);
+
+  await interaction.showModal(modal);
+
+  const filter = (i) => i.customId === `tweet_modal_${curTime}` && i.user.id === interaction.user.id;
+  const submitted = await interaction.awaitModalSubmit({ filter, time: 60000 }).catch(() => null);
+
+  if (!submitted) return;
+
+  await submitted.deferReply({ephemeral:true})
+
+  const tweetURL = submitted.fields.getTextInputValue("tweet_link");
+
+  // Validate tweet link with regex
+const tweetRegex = /https?:\/\/(www\.)?(twitter|x)\.com\/\w+\/status\/\d+/;
+  if (!tweetRegex.test(tweetURL)) {
+    return await submitted.editReply({ content: "Invalid tweet link. Please try again!", ephemeral: true });
+  }
+
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId("tweet_action_select")
+    .setPlaceholder("Choose an action")
+    .addOptions([
+      { label: "Like", value: "like" },
+      { label: "Retweet", value: "retweet" },
+      { label: "Like and Retweet", value: "like_retweet" },
+    ]);
+
+  const actionRow = new ActionRowBuilder().addComponents(selectMenu);
+  const m  = await submitted.editReply({
+    content: "Select an action for this tweet:",
+    components: [actionRow],
+  });
+
+  const actionFilter = (i) => i.customId === "tweet_action_select" 
+  const selection = await m.awaitMessageComponent({ filter: actionFilter, time: 60000 }).catch(() => null);
+
+  if (!selection) return;
+
+
+
+  const selectedAction = selection.values[0]
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+
+const embed = new EmbedBuilder()
+    .setTitle("🚀 Social Event!")
+    .setDescription(
+        `🎯 **Action:** **${selectedAction}**  
+        🔗 [View Tweet](${tweetURL})  
+
+        📌 Interact with the tweet to earn points!  
+        🏆 The more you engage, the more rewards you get.  
+
+        🕒 **Time Remaining:** <t:${Math.floor((Date.now() + 86400000) / 1000)}:R>  
+        📢 Stay tuned for more events and opportunities!`
+    )
+    .setColor("Blue")
+    .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
+    .setFooter({ text: "Keep engaging, keep winning! 🎉" });
+
+
+  const joinButton = new ButtonBuilder()
+    .setCustomId("join_twt")
+    .setLabel("Join")
+    .setStyle(ButtonStyle.Primary);
+
+  const buttonRow = new ActionRowBuilder().addComponents(joinButton);
+
+  // Post in channel with ID 1333
+  const channel = interaction.client.channels.cache.get(guild.botConfig.userChannels.events);
+  if (!channel) return selection.reply({ content: "Error: Channel not found!", ephemeral: true });
+
+  await channel.send({ embeds: [embed], components: [buttonRow] });
+
+  await selection.update({ content: "Tweet posted successfully!", ephemeral: true, components:[], embeds:[] });
+}
+
+module.exports = { handleTweetEventCreate };
+
 async function handleAddItems(interaction) {
   const fieldOptions = [
     {
@@ -1019,6 +1129,7 @@ module.exports = {
   handleTeamSetup,
   handlePointsSetupActiveRewards,
   handlePointsSetupReactionRewards,
+  handleTweetEventCreate,
   handleAddItems,
   handleEditItems,
   handlePurchaseItems,

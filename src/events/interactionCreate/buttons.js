@@ -33,6 +33,14 @@ module.exports = async (client, interaction) => {
       await buttonActions.handlePointsSetupActiveRewards(interaction);
       break;
 
+
+    case customId === "use_twt":
+      await buttonActions.handleTweetEventCreate(interaction);
+      break;
+    case customId === "join_twt":
+      await interaction.reply({content:'Please link your twitter account first at https://example.com', ephemeral:true})
+      break;
+
     // setup ✅ - add/edit/delete items ⏳
 
     case customId === "add_item":

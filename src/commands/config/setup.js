@@ -52,25 +52,7 @@ const giveawayButtonOptions = [
 const missionHallEmbed = {
   title: "🚀 Manage Your Events Here!",
   description: 
-    "**📌 Tweet Engagement:**\n" +
-    "```yaml\n" +
-    "Tweet URL 🔗\n" +
-    "Action Type: Like 👍, RT 🔁, Reply 💬, or combinations\n" +
-    "Duration: 6h, 12h, 24h, 48h, 72h\n" +
-    "```\n" +
-    "**✨ Optional:**\n" +
-    "```yaml\n" +
-    "Keyword Filter 🔍\n" +
-    "Notify Role 🎭\n" +
-    "Assign Role After Engagement ✅\n" +
-    "Minimum Account Age: 1, 3, 6, 12 months ⏳\n" +
-    "Minimum Followers: 50, 100, 500 👥\n" +
-    "```\n" +
-    "**🎙️ Twitter Space Notification:**\n" +
-    "```yaml\n" +
-    "Live Space URL 🔗 (Only if Space is live)\n" +
-    "Notify Role (Optional) 🎭\n" +
-    "```\n",
+    "Please click the button below to fill some requirements to start a tweet engagement event!",
   color: "#00ff99",
 };
 const missionHallButtonOptions = [
