@@ -947,8 +947,18 @@ async function handleFunContestBtn(interaction) {
   );
 }
 
+
 async function handleJoinContest(interaction, itemId) {
   try {
+    const user = await User.findOne({ discordId: interaction.user.id });
+
+    if (!user) {
+      return interaction.reply({
+        content: "User not found in the database.",
+        ephemeral: true,
+      });
+    }
+
     // Step 1: Fetch the contest from the database using itemId (contest._id)
     const contest = await Contest.findById(itemId);
     if (!contest) {
@@ -979,7 +989,18 @@ async function handleJoinContest(interaction, itemId) {
     // Step 4: Assign the role to the user who clicked the button
     await interaction.member.roles.add(role);
 
-    // Step 5: Send confirmation message to the user
+    // Step 5: Increment `eventEngager` counter for the user's current server membership
+    const guildId = interaction.guild.id;
+    const serverMembership = user.serverMemberships.find(
+      (membership) => membership.guildId === guildId
+    );
+
+    if (serverMembership) {
+      serverMembership.counter.eventEngager += 1;
+      await user.save();
+    }
+
+    // Step 6: Send confirmation message to the user
     return interaction.reply({
       content: `You have successfully joined the contest **${contest.title}**! Good luck!`,
       ephemeral: true,

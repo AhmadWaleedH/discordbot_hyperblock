@@ -285,6 +285,16 @@ async function addAdditionalItemOptions(interaction, id) {
         components: [],
         embeds: [],
       });
+
+      await Guilds.updateOne(
+        { guildId: interaction.guild.id }, 
+        { 
+          $inc: { 
+            "counter.storeUpdateCount": 1, 
+            "counter.weeklyStoreUpdateFrequency": 1 
+          } 
+        }
+      );
       break;
     }
     case "blockchain": {
@@ -1094,6 +1104,16 @@ async function addAuctionRoleDropdown(interaction, itemId) {
         console.log(
           `Successfully sent and saved auction embed for auction ${auction._id}`
         );
+
+        await Guilds.updateOne(
+          { guildId: selectInteraction.guild.id }, 
+          { 
+            $inc: { 
+              "counter.auctionUpdateCount": 1, 
+              "counter.weeklyAuctionUpdateFrequency": 1 
+            } 
+          }
+        );
         await selectInteraction.update({
           content: "New Auction Created Successfully!",
           ephemeral: true,
@@ -1464,6 +1484,8 @@ async function collectPointsForWinners(interaction, contest) {
 
 async function createContestThread(interaction, contest) {
   try {
+    const selectedGuild = await Guilds.findOne({guildId : interaction.guild.id});
+    console.log(selectedGuild)
     const newChannel = await interaction.guild.channels.create({
       name: contest.title,
       type: 0, // '0' represents a text channel
@@ -1528,6 +1550,14 @@ async function createContestThread(interaction, contest) {
     contest.isActive = true;
     await contest.save();
 
+    await selectedGuild.updateOne(
+      { 
+        $inc: { 
+          "counter.eventCount": 1, 
+          "counter.weeklyEventFrequency": 1 
+        } 
+      }
+    );
     // Inform the user that the channel was created
     await interaction.followUp({
       content: `A channel for the contest "${contest.title}" has been created!`,

@@ -52,6 +52,14 @@ const userSchema = new Schema({
       points: { type: Number },
       activeRaids: { type: Number },
       completedTasks: { type: Number },
+      counter: { 
+        type: new Schema({
+          previousParticipationPoints: { type: Number, default: 0 },
+          eventEngager: { type: Number, default: 0 },
+          activeParticipant: { type: Boolean, default: true },
+        }), 
+        default: () => ({})
+      },
       userType : {type :String, default : "member"}
     },
   ],

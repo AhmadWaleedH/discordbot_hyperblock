@@ -65,6 +65,20 @@ const serverSchema = new Schema({
     endDate: { type: Date },
     autoRenew: { type: Boolean },
   },
+  counter: { 
+    type : new Schema({
+      announcementCount: { type: Number, default: 0 },
+      weeklyAnnouncementFrequency: { type: Number, default: 0 },
+      eventCount: { type: Number, default: 0 },
+      weeklyEventFrequency: { type: Number, default: 0 },
+      totalActiveParticipants: { type: Number, default: 0 },
+      storeUpdateCount: { type: Number, default: 0 },
+      weeklyStoreUpdateFrequency: { type: Number, default: 0 },
+      auctionUpdateCount: { type: Number, default: 0 },
+      weeklyAuctionUpdateFrequency: { type: Number, default: 0 },
+    }),
+    default : () => ({}),
+  },  
   analytics:{type: new Schema({
     CAS: { type: Number, default: 0 }, 
     CHS: { type: Number, default: 0 },

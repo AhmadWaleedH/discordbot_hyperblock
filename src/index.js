@@ -30,6 +30,35 @@ client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
   try {
+    const guildConfig = await Guilds.findOne({ guildId: message.guild.id });
+    if (!guildConfig) return;
+
+    // Get the reactions channel ID from botConfig
+    const reactionsChannelId = guildConfig.botConfig?.reactions?.channelId;
+    
+    // Check if the message is from the reactions channel
+    if (reactionsChannelId && message.channel.id === reactionsChannelId) {
+      // Increment both counters
+      await Guilds.updateOne(
+        { guildId: message.guild.id },
+        {
+          $inc: {
+            "counter.announcementCount": 1,
+            "counter.weeklyAnnouncementFrequency": 1
+          }
+        }
+      );
+    }
+  } catch (e) {
+    console.log(e);
+  }
+});
+
+
+client.on("messageCreate", async (message) => {
+  if (message.author.bot) return;
+
+  try {
     const guildConfig = await Guilds.findOne({
       guildId: message.guild.id,
     });
