@@ -181,6 +181,7 @@ module.exports = {
           guildId,
           guildName: guild.name,
           guildIconURL: guild.iconURL(),
+          totalMembers:guild.memberCount,
           botConfig: {
             channels: {},
           },

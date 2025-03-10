@@ -3,6 +3,7 @@ const serverSchema = new Schema({
   guildId: { type: String, required: true },
   guildName: { type: String, required: true },
   guildIconURL: String,
+  totalMembers:Number,
   twitterUrl: { type: String },
   category: String,
   userCategory: String,
