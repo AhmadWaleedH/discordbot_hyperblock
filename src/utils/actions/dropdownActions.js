@@ -632,7 +632,7 @@ async function addRaffleOptionalDropDown(interaction, id) {
           label: "Description",
           customId: "description",
           placeholder: "Enter description of the raffle",
-          style: "Short",
+          style: "Paragraph",
           required: true,
         },
       ]);
