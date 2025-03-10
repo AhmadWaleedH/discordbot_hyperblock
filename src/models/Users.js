@@ -43,15 +43,11 @@ const userSchema = new Schema({
       guildId: { type: String, required: true },
       guildName: { type: String, required: true },
       guildIcon: String,
-      subscription: {
-        type: new Schema({ tier: { type: String, default: "free" } }),
-        default: () => ({}),
-      },
       status: { type: String, default: "active" },
       joinedAt: { type: Date },
-      points: { type: Number },
-      activeRaids: { type: Number },
-      completedTasks: { type: Number },
+      points: { type: Number , default:0},
+      activeRaids: { type: Number , default:0},
+      completedTasks: { type: Number , default:0},
       counter: { 
         type: new Schema({
           previousParticipationPoints: { type: Number, default: 0 },

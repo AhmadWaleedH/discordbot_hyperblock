@@ -52,25 +52,7 @@ const giveawayButtonOptions = [
 const missionHallEmbed = {
   title: "🚀 Manage Your Events Here!",
   description: 
-    "**📌 Tweet Engagement:**\n" +
-    "```yaml\n" +
-    "Tweet URL 🔗\n" +
-    "Action Type: Like 👍, RT 🔁, Reply 💬, or combinations\n" +
-    "Duration: 6h, 12h, 24h, 48h, 72h\n" +
-    "```\n" +
-    "**✨ Optional:**\n" +
-    "```yaml\n" +
-    "Keyword Filter 🔍\n" +
-    "Notify Role 🎭\n" +
-    "Assign Role After Engagement ✅\n" +
-    "Minimum Account Age: 1, 3, 6, 12 months ⏳\n" +
-    "Minimum Followers: 50, 100, 500 👥\n" +
-    "```\n" +
-    "**🎙️ Twitter Space Notification:**\n" +
-    "```yaml\n" +
-    "Live Space URL 🔗 (Only if Space is live)\n" +
-    "Notify Role (Optional) 🎭\n" +
-    "```\n",
+    "Please click the button below to fill some requirements to start a tweet engagement event!",
   color: "#00ff99",
 };
 const missionHallButtonOptions = [
@@ -279,13 +261,13 @@ module.exports = {
       const missionsHallChannelId = doc.botConfig.channels.missionsHall;
       const stadiumChannelId = doc.botConfig.channels.stadium;
       const rafflesChannelId = doc.botConfig.channels.raffles;
-      const hyperNotesChannelId = doc.botConfig.channels.hyperNotes;
       // user channels
       const eventChannelId = doc.botConfig.userChannels.events;
       const myBagChannelId = doc.botConfig.userChannels.myBag;
       const userRafflesChannelId = doc.botConfig.userChannels.raffles;
       const shopChannelId = doc.botConfig.userChannels.shop;
       const auctionsChannelId = doc.botConfig.userChannels.auctions;
+      const hyperNotesChannelId = doc.botConfig.userChannels.hyperNotes;
       const message =
         "Tracks all member activities, rewards, and bot interactions for transparency and audit purposes";
       const missionHallMessage =
@@ -429,6 +411,6 @@ async function sendEmbedMessage(client, channelId, description) {
     await channel.send({ embeds: [embed] });
     console.log(`Embed sent to channel: ${channelId}`);
   } catch (error) {
-    console.error(`Failed to send embed: ${error.message}`);
+    console.error( error);
   }
 }
