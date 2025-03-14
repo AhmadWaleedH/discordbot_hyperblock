@@ -1107,9 +1107,6 @@ async function handleEndGivewayModal(interaction, itemId) {
     // Send winner announcement to channel
     const winnerEmbed = createWinnerEmbed(giveaway, winners);
     await channel.send({ embeds: [winnerEmbed] });
-    // Send winner announcement to channel
-    const winnerEmbed = createWinnerEmbed(giveaway, winners);
-    await channel.send({ embeds: [winnerEmbed] });
 
     const guildData = await Guilds.findOne({ guildId: giveaway.guildId });
 

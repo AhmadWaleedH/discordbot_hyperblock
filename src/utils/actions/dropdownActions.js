@@ -8,6 +8,9 @@ const {
   PermissionsBitField,
   PermissionFlagsBits,
   StringSelectMenuBuilder,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
 } = require("discord.js");
 const Guilds = require("../../models/Guilds");
 const ShopItem = require("../../models/Shop");
@@ -1399,15 +1402,66 @@ async function contestCreationSelect(interaction, id) {
   contest.roleAssignedToParticipantName = selectedRole.name;
   await contest.save();
 
-  // Now start collecting the points for the winners
-  await interaction.update({
-    content: `Role assigned successfully! Now, let's collect points for the winners. You have ${contest.numberOfWinners} winners to provide points for.`,
+  const time = Date.now();
+  const customid = `collectPointsModal_${time}`;
+
+  const modal = new ModalBuilder()
+    .setCustomId(customid)
+    .setTitle("Enter Winners’ Points");
+
+  const components = [];
+  for (let i = 0; i < contest.numberOfWinners; i++) {
+    const input = new TextInputBuilder()
+      .setCustomId(`winner_${i + 1}_points`)
+      .setLabel(`Winner #${i + 1} Points`)
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+
+    components.push(new ActionRowBuilder().addComponents(input));
+  }
+
+  modal.addComponents(...components);
+
+  await interaction.showModal(modal);
+
+  const modalSubmit = await interaction
+    .awaitModalSubmit({
+      filter: (i) => i.customId === customid,
+      time: 1000 * 60 * 5,
+    })
+    .catch((e) => null);
+
+  if (!modalSubmit) return;
+
+  const points = [];
+
+  for (let i = 0; i < contest.numberOfWinners; i++) {
+    const value = modalSubmit.fields.getTextInputValue(
+      `winner_${i + 1}_points`
+    );
+
+    // Validate that it's a positive number
+    const parsedValue = parseInt(value, 10);
+    if (isNaN(parsedValue) || parsedValue < 0) {
+      return await modalSubmit.reply({
+        content: `Invalid input for Winner ${i + 1}. Please enter a valid number.`,
+        ephemeral: true,
+      });
+    }
+
+    points.push(parsedValue);
+  }
+
+  contest.pointsForWinners = points;
+  await contest.save();
+
+  await modalSubmit.update({
+    content: "Points recorded successfully! Creating contest thread...",
     ephemeral: true,
     components: [],
   });
 
-  // Call the function to collect the points for winners
-  await collectPointsForWinners(interaction, contest);
+  await createContestThread(interaction, contest);
 }
 module.exports = {
   teamSetupAdminRole,
