@@ -3,7 +3,10 @@ const serverSchema = new Schema({
   guildId: { type: String, required: true },
   guildName: { type: String, required: true },
   guildIconURL: String,
-  totalMembers:Number,
+  ownerUserId: String,
+  ownerUsername: String,
+  ownerAvatarURL: String,
+  totalMembers: Number,
   twitterUrl: { type: String },
   category: String,
   userCategory: String,
@@ -33,7 +36,7 @@ const serverSchema = new Schema({
       channelId: {
         type: String,
       },
-      channelName : {
+      channelName: {
         type: String,
       },
       cooldown: { type: Number, default: 0 },
@@ -43,7 +46,7 @@ const serverSchema = new Schema({
       channelId: {
         type: String,
       },
-      channelName: { type: String},
+      channelName: { type: String },
       cooldown: { type: Number, default: 0 },
       points: { type: Number, default: 0 },
     },
@@ -60,11 +63,14 @@ const serverSchema = new Schema({
       messagePoints: { type: Number },
     },
   },
-  subscription: {type: new Schema( {
-    tier: { type: String , default:'free'},
-  }),  default:()=>({})},
-  counter: { 
-    type : new Schema({
+  subscription: {
+    type: new Schema({
+      tier: { type: String, default: "free" },
+    }),
+    default: () => ({}),
+  },
+  counter: {
+    type: new Schema({
       announcementCount: { type: Number, default: 0 },
       weeklyAnnouncementFrequency: { type: Number, default: 0 },
       eventCount: { type: Number, default: 0 },
@@ -75,18 +81,20 @@ const serverSchema = new Schema({
       auctionUpdateCount: { type: Number, default: 0 },
       weeklyAuctionUpdateFrequency: { type: Number, default: 0 },
     }),
-    default : () => ({}),
-  },  
-  analytics:{type: new Schema({
-    CAS: { type: Number, default: 0 }, 
-    CHS: { type: Number, default: 0 },
-    EAS: { type: Number, default: 0 },
-    CCS: { type: Number, default: 0 },
-    ERC: { type: Number, default: 0 },
-    vault: { type: Number, default: 0 },
-    reservedPoints: { type: Number, default: 0 },
-  }), default:()=> ({})
-},
+    default: () => ({}),
+  },
+  analytics: {
+    type: new Schema({
+      CAS: { type: Number, default: 0 },
+      CHS: { type: Number, default: 0 },
+      EAS: { type: Number, default: 0 },
+      CCS: { type: Number, default: 0 },
+      ERC: { type: Number, default: 0 },
+      vault: { type: Number, default: 0 },
+      reservedPoints: { type: Number, default: 0 },
+    }),
+    default: () => ({}),
+  },
   shop: [{ type: Schema.Types.ObjectId, ref: "ShopItem" }],
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

@@ -19,7 +19,7 @@ const giveawaySchema = new mongoose.Schema({
   entryCost: { type: Number, required: true },
   startTime: { type: Date, required: false },
   endTime: { type: Date, required: false },
-  chain: { type: String, required: true },
+  chain: { type: String },
 
   // Optional fields
   description: String,

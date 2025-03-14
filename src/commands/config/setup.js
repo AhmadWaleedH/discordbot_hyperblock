@@ -48,10 +48,9 @@ const giveawayButtonOptions = [
   },
 ];
 
-
 const missionHallEmbed = {
   title: "🚀 Manage Your Events Here!",
-  description: 
+  description:
     "Please click the button below to fill some requirements to start a tweet engagement event!",
   color: "#00ff99",
 };
@@ -169,10 +168,7 @@ module.exports = {
     try {
       await interaction.deferReply({ ephemeral: true });
 
-      const {
-        guild,
-        member: { id: ownerDiscordId },
-      } = interaction;
+      const { guild, member } = interaction;
       const guildId = guild.id;
 
       let doc = await Guilds.findOne({ guildId });
@@ -181,7 +177,10 @@ module.exports = {
           guildId,
           guildName: guild.name,
           guildIconURL: guild.iconURL(),
-          totalMembers:guild.memberCount,
+          ownerUserId: member.id,
+          ownerUsername: member.user.username,
+          ownerAvatarURL: member.displayAvatarURL(),
+          totalMembers: guild.memberCount,
           botConfig: {
             channels: {},
           },
@@ -311,13 +310,11 @@ module.exports = {
         buttonOptions
       );
 
-
-      
       await sendEmbedWithButtons(
         guild,
         missionsHallChannelId,
         missionHallEmbed,
-        missionHallButtonOptions,
+        missionHallButtonOptions
       );
 
       const guildWithItems = await Guilds.findOne({
@@ -412,6 +409,6 @@ async function sendEmbedMessage(client, channelId, description) {
     await channel.send({ embeds: [embed] });
     console.log(`Embed sent to channel: ${channelId}`);
   } catch (error) {
-    console.error( error);
+    console.error(error);
   }
 }

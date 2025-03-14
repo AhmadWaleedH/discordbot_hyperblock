@@ -21,7 +21,10 @@ const User = require("../../models/Users");
 const Contest = require("../../models/Contests");
 const { createGiveawayEmbed } = require("../embeds/giveawayEmbed");
 const { walletRegexPatterns } = require("../constants");
-const { createAuctionEmbedSaving, createAuctionEmbed } = require("../embeds/auctionEmbed");
+const {
+  createAuctionEmbedSaving,
+  createAuctionEmbed,
+} = require("../embeds/auctionEmbed");
 async function handleSocialRewardsSubmission(interaction) {
   const guildId = interaction.guildId;
   const fields = interaction.fields;
@@ -394,13 +397,6 @@ async function handleAddRaffle(interaction) {
     interaction.fields.getTextInputValue("num_of_winners") || 1
   );
   const entryCost = Number(interaction.fields.getTextInputValue("entry_cost"));
-  const chain = interaction.fields.getTextInputValue("chain_project");
-  if (!raffleTitle || raffleTitle.trim() === "") {
-    return interaction.reply({
-      content: "❌ Please provide a valid raffle title.",
-      ephemeral: true,
-    });
-  }
 
   if (isNaN(numWinners) || numWinners <= 0) {
     return interaction.reply({
@@ -416,19 +412,12 @@ async function handleAddRaffle(interaction) {
     });
   }
 
-  if (!chain || chain.trim() === "") {
-    return interaction.reply({
-      content: "❌ Please provide a valid chain project.",
-      ephemeral: true,
-    });
-  }
   const giveaway = new Giveaway({
     guildId: interaction.guildId,
-    guildName:interaction.guild.name,
+    guildName: interaction.guild.name,
     raffleTitle: raffleTitle,
     numWinners: numWinners,
     entryCost: entryCost,
-    chain: chain,
   });
   await giveaway.save();
 
@@ -442,6 +431,11 @@ async function handleAddRaffle(interaction) {
       label: "Description",
       description: "Add description for the page",
       value: "description",
+    },
+    {
+      label: "Chain",
+      description: "Add chain for the project",
+      value: "project_chain",
     },
     {
       label: "Partner Twitter Page ",
@@ -625,7 +619,6 @@ async function addRaffleOptionals(
 
 async function addAuctionModal(interaction) {
   try {
-   
     const guildId = interaction.guildId;
     const guildName = interaction.guild.name; // Get the guild name
     const name = interaction.fields.getTextInputValue("item_name").trim();
@@ -812,13 +805,13 @@ async function handleBidAmountModal(interaction, id) {
     interaction.user.id,
     bid_amount,
     interaction.guildId,
-    interaction.user.username,
+    interaction.user.username
   );
 
-  const auction = await Auction.findById(id)
+  const auction = await Auction.findById(id);
   const embedMessage = await EmbedMessages.findOne({ itemId: id });
   if (!embedMessage) {
-    throw new Error('Could not find message data for this auction');
+    throw new Error("Could not find message data for this auction");
   }
 
   // Get the channel
@@ -830,7 +823,7 @@ async function handleBidAmountModal(interaction, id) {
   // Fetch the message
   const message = await channel.messages.fetch(embedMessage.messageId);
   if (!message) {
-    throw new Error('Could not find the auction message');
+    throw new Error("Could not find the auction message");
   }
 
   // Create new embed with updated auction data
@@ -839,7 +832,7 @@ async function handleBidAmountModal(interaction, id) {
   // Edit the message
   await message.edit({
     embeds: [embed],
-    components: components
+    components: components,
   });
 
   if (result.success) {
@@ -1020,9 +1013,10 @@ async function handleContestCreationModal(interaction) {
     });
   }
 
-  if (isNaN(winners) || parseInt(winners) < 1) {
+  if (isNaN(winners) || parseInt(winners) < 1 || parseInt(winners) > 5) {
     return await interaction.reply({
-      content: "Number of winners must be a valid number and at least 1.",
+      content:
+        "Number of winners must be a valid number and at least 1 and less than 5.",
       ephemeral: true,
     });
   }
@@ -1037,7 +1031,7 @@ async function handleContestCreationModal(interaction) {
   const endTime = new Date(Date.now() + durationMs);
   const contest = new Contest({
     guildId: interaction.guild.id,
-    guildName : interaction.guild.name,
+    guildName: interaction.guild.name,
     title,
     duration: endTime,
     numberOfWinners: parseInt(winners),
@@ -1061,84 +1055,81 @@ async function handleContestCreationModal(interaction) {
   });
 }
 
+async function handleEndGivewayModal(interaction, itemId) {
+  try {
+    const raffle_name = interaction.fields.getTextInputValue("raffle_name");
 
-async function handleEndGivewayModal(interaction, itemId){
-  try{
+    const giveaway = await Giveaway.findById(itemId);
 
-  
-  const raffle_name = interaction.fields.getTextInputValue("raffle_name");
+    if (!giveaway) {
+      return interaction.reply({
+        content: "Giveaway not found.",
+        ephemeral: true,
+      });
+    }
 
-  const giveaway = await Giveaway.findById(itemId);
+    // Compare the raffle title with the user-provided raffle name
+    if (
+      giveaway.raffleTitle.toLowerCase() !== raffle_name.toLowerCase().trim()
+    ) {
+      return interaction.reply({
+        content: "🎟️ Raffle Title does not match. Try again!",
+        ephemeral: true,
+      });
+    }
 
-  if (!giveaway) {
-    return interaction.reply({
-      content: "Giveaway not found.",
-      ephemeral: true,
-    });
-  }
+    if (
+      giveaway.isExpired ||
+      (giveaway.endTime && giveaway.endTime <= new Date())
+    ) {
+      return interaction.reply({
+        content: "⏰ This giveaway has already ended or expired.",
+        ephemeral: true,
+      });
+    }
 
-  // Compare the raffle title with the user-provided raffle name
-  if (giveaway.raffleTitle.toLowerCase() !== raffle_name.toLowerCase().trim()) {
-    return interaction.reply({
-      content: "🎟️ Raffle Title does not match. Try again!",
-      ephemeral: true,
-    });
-  }
+    const winners = selectRandomWinners(
+      giveaway.participants,
+      giveaway.numWinners
+    );
 
+    // Update giveaway with winners and mark as expired
+    giveaway.winners = winners.map((participant) => ({
+      userId: participant.userId,
+      userName: participant.userName,
+    }));
+    giveaway.isExpired = true;
+    await giveaway.save();
 
-  if (giveaway.isExpired || (giveaway.endTime && giveaway.endTime <= new Date())) {
-    return interaction.reply({
-      content: "⏰ This giveaway has already ended or expired.",
-      ephemeral: true,
-    });
-  }
+    // Get the channel
+    const channel = await interaction.client.channels.fetch(giveaway.channelId);
 
+    // Send winner announcement to channel
+    const winnerEmbed = createWinnerEmbed(giveaway, winners);
+    await channel.send({ embeds: [winnerEmbed] });
 
-  const winners = selectRandomWinners(
-    giveaway.participants,
-    giveaway.numWinners
-  );
-
-  // Update giveaway with winners and mark as expired
-  giveaway.winners = winners.map((participant) => ({
-    userId: participant.userId,
-    userName:participant.userName
-  }));
-  giveaway.isExpired = true;
-  await giveaway.save();
-
-  // Get the channel
-  const channel = await interaction.client.channels.fetch(giveaway.channelId);
-
-  // Send winner announcement to channel
-  const winnerEmbed = createWinnerEmbed(giveaway, winners);
-  await channel.send({ embeds: [winnerEmbed] });
-
-  // Notify winners via DM
-  for (const winner of winners) {
-    await notifyWinner(winner.userId, giveaway, interaction);
-  }
-
-  // If there's a winner role to assign
-  if (giveaway.winnerRole) {
-    const guild = await interaction.client.guilds.fetch(giveaway.guildId);
+    // Notify winners via DM
     for (const winner of winners) {
-      try {
-        const member = await interaction.guild.members.fetch(winner.userId);
-        await member.roles.add(giveaway.winnerRole);
-      } catch (error) {
-        console.error(
-          `Failed to assign role to ${winner.userId}:`,
-          error
-        );
+      await notifyWinner(winner.userId, giveaway, interaction);
+    }
+
+    // If there's a winner role to assign
+    if (giveaway.winnerRole) {
+      const guild = await interaction.client.guilds.fetch(giveaway.guildId);
+      for (const winner of winners) {
+        try {
+          const member = await interaction.guild.members.fetch(winner.userId);
+          await member.roles.add(giveaway.winnerRole);
+        } catch (error) {
+          console.error(`Failed to assign role to ${winner.userId}:`, error);
+        }
       }
     }
-  }
 
-  await interaction.reply({content : "giveaway Ended!", ephemeral: true})
-}catch(e){
-  console.log(e);
-}
+    await interaction.reply({ content: "giveaway Ended!", ephemeral: true });
+  } catch (e) {
+    console.log(e);
+  }
 }
 module.exports = {
   handleSocialSetupSubmission,
@@ -1160,41 +1151,34 @@ module.exports = {
   handleContestCreationModal,
 };
 
-
-
-
 function selectRandomWinners(participants, numWinners) {
   // Step 1: Create a weighted pool that preserves each entry's chance
   // but tracks which user each entry belongs to
   const weightedPool = [...participants];
-  
+
   // Step 2: Shuffle the weighted pool to randomize selection
   const shuffledPool = weightedPool.sort(() => 0.5 - Math.random());
-  
+
   // Step 3: Select winners ensuring no user is picked twice
   const winners = [];
   const selectedUserIds = new Set();
-  
+
   // Keep drawing until we have enough winners or exhausted all participants
   let poolIndex = 0;
   while (winners.length < numWinners && poolIndex < shuffledPool.length) {
     const currentEntry = shuffledPool[poolIndex];
-    
+
     // If this user hasn't been selected yet, add them to winners
     if (!selectedUserIds.has(currentEntry.userId)) {
       winners.push(currentEntry);
       selectedUserIds.add(currentEntry.userId);
     }
-    
+
     poolIndex++;
   }
-  
+
   return winners;
 }
-
-
-
-
 
 function createWinnerEmbed(giveaway, winners) {
   return new EmbedBuilder()
@@ -1214,7 +1198,6 @@ function createWinnerEmbed(giveaway, winners) {
     .setColor("#00FF00")
     .setTimestamp();
 }
-
 
 async function notifyWinner(userId, giveaway, interaction) {
   try {

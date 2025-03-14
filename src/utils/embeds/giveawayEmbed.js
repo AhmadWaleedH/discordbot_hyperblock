@@ -87,7 +87,7 @@ function createGiveawayEmbed(giveaway) {
   if (giveaway.partnerTwitter) {
     embed.addFields({
       name: "🤝 Partner",
-      value: `[Partner](https://twitter.com/${giveaway.partnerTwitter})`,
+      value: `[Partner](${giveaway.partnerTwitter})`,
       inline: false,
     });
   }
@@ -118,14 +118,17 @@ function createGiveawayEmbed(giveaway) {
     .setEmoji("🎟️")
     .setDisabled(giveaway.isExpired);
 
-    const endGiveawayButton = new ButtonBuilder()
+  const endGiveawayButton = new ButtonBuilder()
     .setCustomId(`endRaffleNow_${giveaway._id}`)
     .setLabel(`End Raffle Now)`)
     .setStyle(ButtonStyle.Danger)
     .setEmoji("📣")
     .setDisabled(giveaway.isExpired);
   // Create action row with buttons
-  const row = new ActionRowBuilder().addComponents(joinButton, endGiveawayButton);
+  const row = new ActionRowBuilder().addComponents(
+    joinButton,
+    endGiveawayButton
+  );
 
   return {
     embed: embed,

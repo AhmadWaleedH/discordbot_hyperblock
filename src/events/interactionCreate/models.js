@@ -1,4 +1,5 @@
 const modelActions = require("../../utils/actions/modelActions");
+const { updateGiveaway } = require("../../utils/commons");
 module.exports = async (client, interaction) => {
   if (!interaction.isModalSubmit()) return;
   // Handle modal submissions with a switch statement
@@ -31,13 +32,11 @@ module.exports = async (client, interaction) => {
       await modelActions.handleAddRaffle(interaction);
       break;
 
-      case customId.startsWith("enter_raffle_end_"): {
-        const itemId = customId.split("enter_raffle_end_")[1];
-        await modelActions.handleEndGivewayModal(interaction, itemId);
-        break;
-      }
-
-    
+    case customId.startsWith("enter_raffle_end_"): {
+      const itemId = customId.split("enter_raffle_end_")[1];
+      await modelActions.handleEndGivewayModal(interaction, itemId);
+      break;
+    }
 
     case customId.startsWith("add_raffle_description_"): {
       const itemId = customId.split("add_raffle_description_")[1];
@@ -58,12 +57,28 @@ module.exports = async (client, interaction) => {
 
     case customId.startsWith("add_raffle_twitter_"): {
       const itemId = customId.split("add_raffle_twitter_")[1];
-      await modelActions.addRaffleOptionals(
-        interaction,
-        itemId,
-        "twitter_page_link",
-        "partnerTwitter"
+
+      const field = interaction.fields.getTextInputValue("twitter_page_link");
+
+      const match = field.match(
+        /^(?:https?:\/\/)?(?:www\.)?(?:x\.com|twitter\.com)\/@?([a-zA-Z0-9_]+)\/?$|^@?([a-zA-Z0-9_]+)$/i
       );
+
+      if (!match)
+        await interaction.reply({
+          content:
+            "Please enter correct format like \`http://x.com/elonMusk\` OR \`elonMusk\` (plain username)",
+          ephemeral: true,
+        });
+
+      if (match) {
+        const username = match[2] || match[1] || match[0];
+
+        await updateGiveaway(interaction, itemId, {
+          partnerTwitter: `https://x.com/${username}`,
+        });
+      }
+
       break;
     }
 

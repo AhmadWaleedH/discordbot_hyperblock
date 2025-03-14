@@ -7,6 +7,7 @@ const {
   ChannelType,
   PermissionsBitField,
   PermissionFlagsBits,
+  StringSelectMenuBuilder,
 } = require("discord.js");
 const Guilds = require("../../models/Guilds");
 const ShopItem = require("../../models/Shop");
@@ -40,22 +41,34 @@ async function teamSetupAdminRole(interaction) {
   const members = await interaction.guild.members.fetch();
 
   // Filter members who have at least one of the specified roles
-  const filteredMembers = members.filter(member =>
-    member.roles.cache.some(role => roleIds.includes(role.id))
+  const filteredMembers = members.filter((member) =>
+    member.roles.cache.some((role) => roleIds.includes(role.id))
   );
   console.log(filteredMembers);
-  for (const [,member] of filteredMembers) {
+  for (const [, member] of filteredMembers) {
     const user = await User.findOne({ discordId: member.id });
 
     if (!user) {
       console.log(`User ${member.user.username} not found in the database.`);
 
-      await User.create({discordId:member.id,discordUsername: member.user.username, discordUserAvatarURL: member.displayAvatarURL(), serverMemberships:[{guildId:interaction.guild.id, guildName: interaction.guild.name, guildIcon: interaction.guild.iconURL(), userType:'admin'}] })
+      await User.create({
+        discordId: member.id,
+        discordUsername: member.user.username,
+        discordUserAvatarURL: member.displayAvatarURL(),
+        serverMemberships: [
+          {
+            guildId: interaction.guild.id,
+            guildName: interaction.guild.name,
+            guildIcon: interaction.guild.iconURL(),
+            userType: "admin",
+          },
+        ],
+      });
       continue;
     }
 
     // Update userType to 'admin' in the specific serverMembership
-    user.serverMemberships.forEach(membership => {
+    user.serverMemberships.forEach((membership) => {
       if (membership.guildId === guildId) {
         membership.userType = "admin";
       }
@@ -113,13 +126,16 @@ async function teamSetupAdminRole(interaction) {
   }
 }
 async function pointsSetupAdminRole(interaction) {
-
   const selectedChannelId = interaction.values[0]; // Get selected channel ID
-const selectedChannel = interaction.guild.channels.cache.get(selectedChannelId); // Get channel object
+  const selectedChannel =
+    interaction.guild.channels.cache.get(selectedChannelId); // Get channel object
 
-if (!selectedChannel) {
-  return interaction.reply({ content: "Invalid channel selected.", ephemeral: true });
-}
+  if (!selectedChannel) {
+    return interaction.reply({
+      content: "Invalid channel selected.",
+      ephemeral: true,
+    });
+  }
   const guildId = interaction.guildId;
   let guildDoc = await Guilds.findOne({ guildId });
   if (guildDoc) {
@@ -155,18 +171,22 @@ if (!selectedChannel) {
 }
 async function reactionRewardSetup(interaction) {
   const guildId = interaction.guildId;
-const selectedChannelId = interaction.values[0]; // Since max values = 1, only one channel is selected
-const selectedChannel = interaction.guild.channels.cache.get(selectedChannelId); // Get channel object
+  const selectedChannelId = interaction.values[0]; // Since max values = 1, only one channel is selected
+  const selectedChannel =
+    interaction.guild.channels.cache.get(selectedChannelId); // Get channel object
 
-if (!selectedChannel) {
-  return interaction.reply({ content: "Invalid channel selected.", ephemeral: true });
-}
+  if (!selectedChannel) {
+    return interaction.reply({
+      content: "Invalid channel selected.",
+      ephemeral: true,
+    });
+  }
 
-let guildDoc = await Guilds.findOne({ guildId });
-if (guildDoc) {
-  guildDoc.botConfig.reactions.channelId = selectedChannelId;
-  guildDoc.botConfig.reactions.channelName = selectedChannel.name;
-  await guildDoc.save();
+  let guildDoc = await Guilds.findOne({ guildId });
+  if (guildDoc) {
+    guildDoc.botConfig.reactions.channelId = selectedChannelId;
+    guildDoc.botConfig.reactions.channelName = selectedChannel.name;
+    await guildDoc.save();
     const fieldOptions = [
       {
         label: "Time (in minutes)",
@@ -259,9 +279,8 @@ async function addAdditionalItemOptions(interaction, id) {
       if (!hypermarketChannelId) {
         return interaction.reply("❌ **shop channel not configured!**");
       }
-      const hypermarketChannel = await interaction.guild.channels.fetch(
-        hypermarketChannelId
-      );
+      const hypermarketChannel =
+        await interaction.guild.channels.fetch(hypermarketChannelId);
       if (!hypermarketChannel) {
         return interaction.reply("❌ **Hypermarket channel not found!**");
       }
@@ -289,12 +308,12 @@ async function addAdditionalItemOptions(interaction, id) {
       });
 
       await Guilds.updateOne(
-        { guildId: interaction.guild.id }, 
-        { 
-          $inc: { 
-            "counter.storeUpdateCount": 1, 
-            "counter.weeklyStoreUpdateFrequency": 1 
-          } 
+        { guildId: interaction.guild.id },
+        {
+          $inc: {
+            "counter.storeUpdateCount": 1,
+            "counter.weeklyStoreUpdateFrequency": 1,
+          },
         }
       );
       break;
@@ -597,7 +616,7 @@ async function addRaffleOptionalDropDown(interaction, id) {
           style: "Short",
         },
         {
-          label: "Time to start HH:MM PM/AM 9:24 PM",
+          label: "Time to start (UTC) HH:MM PM/AM 09:24 PM",
           customId: "giveaway_start_time",
           placeholder: "HH:MM PM/AM",
           style: "Short",
@@ -609,7 +628,7 @@ async function addRaffleOptionalDropDown(interaction, id) {
           style: "Short",
         },
         {
-          label: "Time to end HH:MM PM/AM 9:24 PM",
+          label: "Time to end (UTC) HH:MM PM/AM 09:24 PM",
           customId: "giveaway_end_time",
           placeholder: "HH:MM PM/AM",
           style: "Short",
@@ -618,7 +637,7 @@ async function addRaffleOptionalDropDown(interaction, id) {
 
       await showModal(
         interaction,
-        "Giveaway Time Configuration",
+        "Giveaway Time Configuration (UTC FORMAT)",
         `add_giveaway_time_${id}`,
         fieldOptions
       );
@@ -636,6 +655,79 @@ async function addRaffleOptionalDropDown(interaction, id) {
           required: true,
         },
       ]);
+      break;
+    case "project_chain":
+      const options = [
+        {
+          label: "Ethereum",
+          description: `The leading decentralized platform for smart contracts and decentralized 
+applications (dApps).`,
+          value: "Ethereum",
+        },
+        {
+          label: "Solana",
+          description: `A high-performance blockchain supporting smart contracts`,
+          value: "Solana",
+        },
+        {
+          label: "Bitcoin",
+          description: `The original cryptocurrency, primarily used as a store of value.`,
+          value: "Bitcoin",
+        },
+        {
+          label: "Binance",
+          description: `A fast, low-cost Ethereum-compatible blockchain`,
+          value: "Binance",
+        },
+        {
+          label: "Cardano",
+          description: `A research-driven blockchain with a focus on sustainability`,
+          value: "Cardano",
+        },
+        {
+          label: "Polygon",
+          description: `A Layer-2 scaling solution for Ethereum, offering fast transactions`,
+          value: "Polygon",
+        },
+        {
+          label: "Avalanche",
+          description: `A highly scalable blockchain platform with sub-second transaction`,
+          value: "Avalanche",
+        },
+        {
+          label: "Tron",
+          description: `A decentralized platform for content sharing and entertainment dApps.`,
+          value: "Tron",
+        },
+        {
+          label: "Polkadot",
+          description: `A multi-chain network enabling cross-blockchain transfers.`,
+          value: "Polkadot",
+        },
+        {
+          label: "Ripple",
+          description: `A blockchain optimized for fast, low-cost cross-border payments`,
+          value: "Ripple",
+        },
+      ];
+      const selectMenu = new StringSelectMenuBuilder()
+        .setCustomId(`add_raffle_chain_${id}`) // ID to identify the selection action
+        .setPlaceholder("Choose the blockchains") // Placeholder text
+        .addOptions(
+          options.map((option) => ({
+            label: option.label,
+            description: option.description,
+            value: option.value,
+          }))
+        ); // Dynamically add options
+
+      // Wrap the select menu in an action row (use ActionRowBuilder for v14)
+      const rows = new ActionRowBuilder().addComponents(selectMenu);
+
+      await interaction.reply({
+        components: [rows], // Add the select menu as a component
+        ephemeral: true,
+      });
       break;
     case "twitter_page":
       modalCustomId = `add_raffle_twitter_${id}`;
@@ -694,7 +786,7 @@ async function addRaffleOptionalDropDown(interaction, id) {
       await showModal(interaction, "Add Raffle Notes", modalCustomId, [
         {
           label: "Notes to Follow",
-          customId: `add_notes_follow"`,
+          customId: `add_notes_follow`,
           placeholder: "Notes to follow",
           style: "Short",
           required: true,
@@ -706,20 +798,17 @@ async function addRaffleOptionalDropDown(interaction, id) {
   }
 }
 async function addRaffleOptionalsDb(interaction, id, dbKey, isRole) {
-  const value = 
-   interaction.values[0];
+  const value = interaction.values[0];
 
-   
-  let role 
-  if(isRole) role = interaction.guild.roles.cache.get(value)
+  let role;
+  if (isRole) role = interaction.guild.roles.cache.get(value);
 
-    
   await updateGiveaway(
     interaction,
     id,
     {
       [dbKey]: value,
-      ...(isRole && {[`${dbKey}Name`]:role.name})
+      ...(isRole && { [`${dbKey}Name`]: role.name }),
     },
     true
   );
@@ -736,11 +825,6 @@ async function editRaffleDropdown(interaction) {
       label: "No of winners",
       description: "Just want to go ahead and save the required data..",
       value: "edit_no_winners",
-    },
-    {
-      label: "Chain of he project",
-      description: "Just want to go ahead and save the required data..",
-      value: "edit_chain_project",
     },
     {
       label: "Entry Cost ",
@@ -818,19 +902,19 @@ async function editRaffleDropdown(interaction) {
             },
           ],
         },
-        edit_chain_project: {
-          title: "Edit Chain Project",
-          customId: "edit_chain_project",
-          fieldOptions: [
-            {
-              label: "Chain Project",
-              customId: "edit_chain_project",
-              placeholder: "Enter Chain project",
-              value: giveaway.chain,
-              style: "Short",
-            },
-          ],
-        },
+        // edit_chain_project: {
+        //   title: "Edit Chain Project",
+        //   customId: "edit_chain_project",
+        //   fieldOptions: [
+        //     {
+        //       label: "Chain Project",
+        //       customId: "edit_chain_project",
+        //       placeholder: "Enter Chain project",
+        //       value: giveaway.chain,
+        //       style: "Short",
+        //     },
+        //   ],
+        // },
         edit_entry_cost: {
           title: "Edit Entry Cost (2 min, 5 hour) ",
           customId: "edit_entry_cost",
@@ -1025,7 +1109,10 @@ async function deleteRaffleDropdown(interaction) {
   const selectedId = interaction.values[0];
   const giveaway = await Giveaway.findByIdAndDelete(selectedId);
   if (giveaway) {
-    await interaction.update({content:"Successfully deleted the Selected Giveaway", components:[]});
+    await interaction.update({
+      content: "Successfully deleted the Selected Giveaway",
+      components: [],
+    });
   } else {
     await interaction.reply("failed to delete the selected Giveaway!");
   }
@@ -1035,7 +1122,10 @@ async function addAuctionRoleDropdown(interaction, itemId) {
   const selectedRoleId = interaction.values[0];
   const selectedRole = interaction.guild.roles.cache.get(selectedRoleId);
   if (!selectedRole) {
-    return interaction.reply({ content: "Invalid role selected.", ephemeral: true });
+    return interaction.reply({
+      content: "Invalid role selected.",
+      ephemeral: true,
+    });
   }
   const auction = await Auction.findById(itemId);
   auction.roleForWinner = selectedRoleId;
@@ -1083,7 +1173,8 @@ async function addAuctionRoleDropdown(interaction, itemId) {
         });
 
         const auctionChannel = guild.botConfig?.userChannels?.auctions || null;
-        const channel = await interaction.guild.channels.cache.get(auctionChannel);
+        const channel =
+          await interaction.guild.channels.cache.get(auctionChannel);
         const { embed, components } = createAuctionEmbed(auction);
 
         // Send the message
@@ -1108,12 +1199,12 @@ async function addAuctionRoleDropdown(interaction, itemId) {
         );
 
         await Guilds.updateOne(
-          { guildId: selectInteraction.guild.id }, 
-          { 
-            $inc: { 
-              "counter.auctionUpdateCount": 1, 
-              "counter.weeklyAuctionUpdateFrequency": 1 
-            } 
+          { guildId: selectInteraction.guild.id },
+          {
+            $inc: {
+              "counter.auctionUpdateCount": 1,
+              "counter.weeklyAuctionUpdateFrequency": 1,
+            },
           }
         );
         await selectInteraction.update({
@@ -1261,7 +1352,7 @@ async function deleteAuctionSelect(interaction) {
 async function bidAuctionSelect(interaction) {
   const selectedId = interaction.values[0];
   const auction = await Auction.findById(selectedId);
-  
+
   interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
 }
 
@@ -1299,7 +1390,7 @@ async function mintWalletSelect(interaction) {
 
 async function contestCreationSelect(interaction, id) {
   const selectedId = interaction.values[0];
-  const selectedRole = interaction.guild.roles.cache.get(selectedId); 
+  const selectedRole = interaction.guild.roles.cache.get(selectedId);
   // Find the contest from the database
   const contest = await Contest.findById(id);
 
@@ -1486,8 +1577,10 @@ async function collectPointsForWinners(interaction, contest) {
 
 async function createContestThread(interaction, contest) {
   try {
-    const selectedGuild = await Guilds.findOne({guildId : interaction.guild.id});
-    console.log(selectedGuild)
+    const selectedGuild = await Guilds.findOne({
+      guildId: interaction.guild.id,
+    });
+    console.log(selectedGuild);
     const newChannel = await interaction.guild.channels.create({
       name: contest.title,
       type: 0, // '0' represents a text channel
@@ -1552,14 +1645,12 @@ async function createContestThread(interaction, contest) {
     contest.isActive = true;
     await contest.save();
 
-    await selectedGuild.updateOne(
-      { 
-        $inc: { 
-          "counter.eventCount": 1, 
-          "counter.weeklyEventFrequency": 1 
-        } 
-      }
-    );
+    await selectedGuild.updateOne({
+      $inc: {
+        "counter.eventCount": 1,
+        "counter.weeklyEventFrequency": 1,
+      },
+    });
     // Inform the user that the channel was created
     await interaction.followUp({
       content: `A channel for the contest "${contest.title}" has been created!`,

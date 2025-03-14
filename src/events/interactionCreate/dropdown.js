@@ -59,6 +59,11 @@ module.exports = async (client, interaction) => {
       await dropdownActions.addRaffleOptionalDropDown(interaction, itemId);
       break;
     }
+    case customId.startsWith("add_raffle_chain_"): {
+      const itemId = customId.split("add_raffle_chain_")[1];
+      await dropdownActions.addRaffleOptionalsDb(interaction, itemId, "chain");
+      break;
+    }
     case customId.startsWith("add_raffleassign_role_"): {
       const itemId = customId.split("add_raffleassign_role_")[1];
       await dropdownActions.addRaffleOptionalsDb(
@@ -74,7 +79,8 @@ module.exports = async (client, interaction) => {
       await dropdownActions.addRaffleOptionalsDb(
         interaction,
         itemId,
-        "roleRequired",true
+        "roleRequired",
+        true
       );
       break;
     }
