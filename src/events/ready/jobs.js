@@ -1,6 +1,7 @@
 const { EmbedBuilder, PermissionsBitField } = require("discord.js");
 const Contest = require("../../models/Contests");
 const User = require("../../models/Users");
+const Guilds = require("../../models/Guilds")
 const cron = require("node-cron");
 
 module.exports = async (client) => {
@@ -36,46 +37,10 @@ module.exports = async (client) => {
               `Updated permissions for channel ${channel.name} in guild ${guild.name}.`
             );
 
-            // Get all participants (message creators)
-            const allParticipants = [...new Set(contest.votes.map(vote => vote.authorId).filter(id => id))];
-            
-            // **1. Award points to all participants (post creators)**
-            for (const userId of allParticipants) {
-              const discordUser = await client.users.fetch(userId); // Fetch user from Discord API
-              let user = await User.findOne({ discordId: userId });
-              if (!user) {
-                user = new User({
-                  discordId: userId,
-                  discordUsername: discordUser.username,
-                  discordUserAvatarURL: discordUser.displayAvatarURL({ dynamic: true }),
-                  status: "active",
-                });
-              }
-
-              const serverMembership = user.serverMemberships.find(
-                (membership) => membership.guildId === contest.guildId
-              );
-
-              if (serverMembership) {
-                serverMembership.points += contest.pointsForParticipants;
-              } else {
-                const guild = await client.guilds.fetch(contest.guildId);
-                user.serverMemberships.push({
-                  guildId: contest.guildId,
-                  guildName: guild.name,
-                  guildIcon: guild.iconURL({ dynamic: true }),
-                  points: contest.pointsForParticipants,
-                });
-              }
-
-              await user.save();
-              console.log(
-                `Awarded ${contest.pointsForParticipants} points to participant ${userId}`
-              );
-            }
-
             // **2. Determine winners based on content creators with most votes**
             // Calculate total votes for each message
+
+            const allParticipants = [...new Set(contest.votes.map(vote => vote.authorId).filter(id => id))];
             const contentCreatorVotes = [];
             
             for (const vote of contest.votes) {
@@ -135,6 +100,7 @@ module.exports = async (client) => {
 
             // **3. Mark contest as inactive**
             contest.isActive = false;
+            contest.deletionTime = new Date(Date.now() + 2 * 60 * 1000);
             await contest.save();
 
             // **4. Generate and send the updated embed with all participants and winners**
@@ -181,7 +147,7 @@ module.exports = async (client) => {
                   inline: true,
                 },
                 {
-                  name: "💥 **Points for Participants**",
+                  name: "💥 **Points for Participation**",
                   value: `${contest.pointsForParticipants} points`,
                   inline: true,
                 },
@@ -199,6 +165,17 @@ module.exports = async (client) => {
               .setColor("#FF5733")
               .setFooter({ text: "Good luck in future contests!" });
 
+
+
+              const guildData = await Guilds.findOne({ guildId: contest.guildId });
+              if (guildData?.botConfig?.userChannels?.leaderboard) {
+                const leaderboardChannelId = guildData.botConfig.userChannels.leaderboard;
+                const leaderboardChannel = await client.channels.fetch(leaderboardChannelId);
+      
+                if (leaderboardChannel) {
+                  await leaderboardChannel.send({ embeds: [contestEmbed] });
+                }
+              }
             // Send the final message to the contest channel
             await channel.send({ embeds: [contestEmbed] });
           }
@@ -208,4 +185,32 @@ module.exports = async (client) => {
       console.error("Error running cron job:", error);
     }
   });
+
+
+  cron.schedule("* * * * *", async () => {
+    try {
+      const contestsToDelete = await Contest.find({
+        deletionTime: { $lte: new Date() }, // Find contests where deletionTime has passed
+      });
+  
+      for (const contest of contestsToDelete) {
+        const guild = await client.guilds.fetch(contest.guildId);
+        const channel = await guild.channels.fetch(contest.channelId);
+  
+        if (channel) {
+          await channel.delete();
+          console.log(`Deleted channel ${contest.channelId} from guild ${guild.name}.`);
+        }
+  
+        // Remove contest entry from database (optional)
+        await Contest.deleteOne({ _id: contest._id });
+      }
+    } catch (error) {
+      console.error("Error deleting expired contest channels:", error);
+    }
+  });
 };
+
+
+
+

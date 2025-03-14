@@ -92,6 +92,14 @@ async function endAuction(auction, client) {
       }
     }
     await auction.save();
+              if (guildDoc?.botConfig?.userChannels?.leaderboard) {
+                const leaderboardChannelId = guildDoc.botConfig.userChannels.leaderboard;
+                const leaderboardChannel = await client.channels.fetch(leaderboardChannelId);
+      
+                if (leaderboardChannel) {
+                  await leaderboardChannel.send({ embeds: [endEmbed] });
+                }
+              }
 
     // Send the auction end message to the channel
     await auctionChannel.send({ embeds: [endEmbed] });

@@ -7,7 +7,7 @@ exports.channels = [
    // becomes hyperNotes in schema
   "raffles",
 ];
-exports.UserChannels = ["events", "shop", "my-bag", "auctions","hyper-notes","raffles"];
+exports.UserChannels = ["events", "shop", "my-bag", "auctions","hyper-notes","raffles", "leaderboard"];
 
 
 

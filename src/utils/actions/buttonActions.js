@@ -1078,6 +1078,30 @@ async function handleJoinContest(interaction, itemId) {
       });
     }
 
+    const guildId = interaction.guild.id;
+    const serverMembership = user.serverMemberships.find(
+      (membership) => membership.guildId === guildId
+    );
+
+    if (!serverMembership) {
+      return interaction.reply({
+        content: "❌ You are not a member of this server in the database.",
+        ephemeral: true,
+      });
+    }
+
+
+    if (serverMembership.points < contest.pointsForParticipants) {
+      return interaction.reply({
+        content: `❌ You need **${contest.pointsForParticipants}** points to join this contest, but you only have **${serverMembership.points}** points.`,
+        ephemeral: true,
+      });
+    }
+
+
+    serverMembership.points -= contest.pointsForParticipants;
+    await user.save();
+
     // Step 2: Get the role ID assigned to participants in the contest
     const roleId = contest.roleAssignedToParticipant;
     if (!roleId) {
@@ -1099,11 +1123,6 @@ async function handleJoinContest(interaction, itemId) {
     // Step 4: Assign the role to the user who clicked the button
     await interaction.member.roles.add(role);
 
-    // Step 5: Increment `eventEngager` counter for the user's current server membership
-    const guildId = interaction.guild.id;
-    const serverMembership = user.serverMemberships.find(
-      (membership) => membership.guildId === guildId
-    );
 
     if (serverMembership) {
       serverMembership.counter.eventEngager += 1;
@@ -1112,9 +1131,12 @@ async function handleJoinContest(interaction, itemId) {
 
     // Step 6: Send confirmation message to the user
     return interaction.reply({
-      content: `You have successfully joined the contest **${contest.title}**! Good luck!`,
+      content: `🎉 **Congratulations!** You've successfully joined the contest **${contest.title}**!  
+📌 **${contest.pointsForParticipants} points** have been deducted from your balance.  
+🚀 Now, submit your artwork to start receiving votes.  
+✨ Best of luck!`,
       ephemeral: true,
-    });
+    });    
   } catch (error) {
     console.error("Error handling join contest:", error);
     return interaction.reply({

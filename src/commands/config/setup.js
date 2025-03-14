@@ -269,6 +269,7 @@ module.exports = {
       const shopChannelId = doc.botConfig.userChannels.shop;
       const auctionsChannelId = doc.botConfig.userChannels.auctions;
       const hyperNotesChannelId = doc.botConfig.userChannels.hyperNotes;
+      const leaderboardChannelId = doc.botConfig.userChannels.leaderboard;
       const message =
         "Tracks all member activities, rewards, and bot interactions for transparency and audit purposes";
       const missionHallMessage =
@@ -291,6 +292,8 @@ module.exports = {
         "Enter raffles for a chance to win fantastic prizes. Your luck could lead to amazing rewards, so don't miss out on these thrilling opportunities!";
       const auctionMessage =
         "Participate in auctions where you can bid on rare and highly sought-after items. The highest bidder wins, so get ready to compete for unique treasures!";
+      const leaderboardMessage =
+        "All contests winners will be announced here including raffles, contests, auctions";
       await sendEmbedMessage(client, missionsHallChannelId, missionHallMessage);
       await sendEmbedMessage(client, stadiumChannelId, stadiumMessage);
       await sendEmbedMessage(client, hypeLogsChannelId, message);
@@ -303,6 +306,7 @@ module.exports = {
       await sendEmbedMessage(client, userRafflesChannelId, userRaffleMessage);
       await sendEmbedMessage(client, shopChannelId, shopMessage);
       await sendEmbedMessage(client, auctionsChannelId, auctionMessage);
+      await sendEmbedMessage(client, leaderboardChannelId, leaderboardMessage);
 
       await sendEmbedWithButtons(
         guild,
