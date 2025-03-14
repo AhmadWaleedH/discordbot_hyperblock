@@ -68,8 +68,9 @@ const contestSchema = new mongoose.Schema({
       ],
     },
   ],
+  deletionTime: { type: Date, default: null }, // Time to delete the channel
 });
 
-const Contest = mongoose.model("Contest", contestSchema);
+const   Contest = mongoose.model("Contest", contestSchema);
 
 module.exports = Contest;

@@ -1581,9 +1581,20 @@ async function createContestThread(interaction, contest) {
       guildId: interaction.guild.id,
     });
     console.log(selectedGuild);
+
+    if (!selectedGuild || !selectedGuild.userCategory) {
+      return interaction.reply({
+        content:
+          "Error: No category is set for contests. Please configure a category first.",
+        ephemeral: true,
+      });
+    }
+
+    const categoryId = selectedGuild.userCategory;
     const newChannel = await interaction.guild.channels.create({
       name: contest.title,
       type: 0, // '0' represents a text channel
+      parent: categoryId,
       reason: `Contest created for ${contest.title}`,
     });
 

@@ -2,6 +2,7 @@ const { ActivityType, EmbedBuilder } = require("discord.js");
 const { default: mongoose } = require("mongoose");
 const cron = require("node-cron");
 const Giveaway = require("../../models/raffles");
+const Guilds = require("../../models/Guilds")
 const {
   initAuctionExpirationSystem,
   endAuction,
@@ -147,6 +148,7 @@ async function processExpiredGiveaways(client) {
         giveaway.isExpired = true;
         await giveaway.save();
 
+
         // Get the channel
         const channel = await client.channels.fetch(giveaway.channelId);
         if (!channel) continue;
@@ -154,6 +156,20 @@ async function processExpiredGiveaways(client) {
         // Send winner announcement to channel
         const winnerEmbed = createWinnerEmbed(giveaway, winners);
         await channel.send({ embeds: [winnerEmbed] });
+
+
+        
+        const guildData = await Guilds.findOne({ guildId: giveaway.guildId });
+
+
+        if (guildData?.botConfig?.userChannels?.leaderboard) {
+          const leaderboardChannelId = guildData.botConfig.userChannels.leaderboard;
+          const leaderboardChannel = await client.channels.fetch(leaderboardChannelId);
+
+          if (leaderboardChannel) {
+            await leaderboardChannel.send({ embeds: [winnerEmbed] });
+          }
+        }
 
         // Notify winners via DM
         for (const winner of winners) {

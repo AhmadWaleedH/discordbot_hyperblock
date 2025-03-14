@@ -31,6 +31,7 @@ const serverSchema = new Schema({
       raffles: { type: String },
       shop: { type: String },
       auctions: { type: String },
+      leaderboard: { type: String },
     },
     chats: {
       channelId: {
