@@ -129,15 +129,15 @@ async function handleSocialRewards(interaction) {
       style: "Short",
     },
     {
-      label: "Points for Space",
-      customId: "points_space",
-      placeholder: "Enter points for Space",
-      style: "Short",
-    },
-    {
       label: "Points for RT",
       customId: "points_rt",
       placeholder: "Enter points for RT",
+      style: "Short",
+    },
+    {
+      label: "Points for Space",
+      customId: "points_space",
+      placeholder: "Enter points for Space",
       style: "Short",
     },
   ];
@@ -1143,14 +1143,12 @@ async function handleJoinContest(interaction, itemId) {
       });
     }
 
-
     if (serverMembership.points < contest.pointsForParticipants) {
       return interaction.reply({
         content: `❌ You need **${contest.pointsForParticipants}** points to join this contest, but you only have **${serverMembership.points}** points.`,
         ephemeral: true,
       });
     }
-
 
     serverMembership.points -= contest.pointsForParticipants;
     await user.save();
@@ -1176,7 +1174,6 @@ async function handleJoinContest(interaction, itemId) {
     // Step 4: Assign the role to the user who clicked the button
     await interaction.member.roles.add(role);
 
-
     if (serverMembership) {
       serverMembership.counter.eventEngager += 1;
       await user.save();
@@ -1189,7 +1186,7 @@ async function handleJoinContest(interaction, itemId) {
 🚀 Now, submit your artwork to start receiving votes.  
 ✨ Best of luck!`,
       ephemeral: true,
-    });    
+    });
   } catch (error) {
     console.error("Error handling join contest:", error);
     return interaction.reply({

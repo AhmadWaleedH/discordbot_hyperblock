@@ -25,7 +25,6 @@ const client = new Client({
 
 eventHandler(client);
 
-
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
@@ -35,7 +34,7 @@ client.on("messageCreate", async (message) => {
 
     // Get the reactions channel ID from botConfig
     const reactionsChannelId = guildConfig.botConfig?.reactions?.channelId;
-    
+
     // Check if the message is from the reactions channel
     if (reactionsChannelId && message.channel.id === reactionsChannelId) {
       // Increment both counters
@@ -44,8 +43,8 @@ client.on("messageCreate", async (message) => {
         {
           $inc: {
             "counter.announcementCount": 1,
-            "counter.weeklyAnnouncementFrequency": 1
-          }
+            "counter.weeklyAnnouncementFrequency": 1,
+          },
         }
       );
     }
@@ -53,7 +52,6 @@ client.on("messageCreate", async (message) => {
     console.log(e);
   }
 });
-
 
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
@@ -127,7 +125,7 @@ client.on("messageCreate", async (message) => {
       user.lastActive = new Date();
 
       // Optionally notify user about points earned (uncomment if needed)
-      await message.reply(`You earned ${points} points!`);
+      // await message.reply(`You earned ${points} points!`);
     }
 
     // Save user changes
@@ -136,7 +134,6 @@ client.on("messageCreate", async (message) => {
     console.error("Error in messageCreate event:", error);
   }
 });
-
 
 // Contest FUN ART EVENT MESSAGE ADD EVENT
 client.on("messageCreate", async (message) => {
@@ -170,7 +167,7 @@ client.on("messageCreate", async (message) => {
         contestEntry = {
           messageId: message.id,
           authorId: message.author.id,
-          authorName : message.author.username,
+          authorName: message.author.username,
           userVotes: [],
         };
         contest.votes.push(contestEntry);
@@ -212,23 +209,27 @@ client.on("messageReactionAdd", async (reaction, user) => {
         const entry = contest.votes[i];
         // Skip the current message we're voting on
         if (entry.messageId === reaction.message.id) continue;
-        
+
         // Check if user has a vote in this entry
-        const userVoteIndex = entry.userVotes.findIndex(vote => vote.userId === user.id);
+        const userVoteIndex = entry.userVotes.findIndex(
+          (vote) => vote.userId === user.id
+        );
         if (userVoteIndex !== -1) {
           userPreviousVoteEntry = entry;
           userPreviousVoteIndex = userVoteIndex;
-          
+
           // Found a previous vote, so get the message it was on
           try {
-            const previousVotedMessage = await reaction.message.channel.messages.fetch(entry.messageId);
-            
+            const previousVotedMessage =
+              await reaction.message.channel.messages.fetch(entry.messageId);
+
             // Remove the user's reaction from the previous message
-            const previousReaction = previousVotedMessage.reactions.cache.get("⬆️");
+            const previousReaction =
+              previousVotedMessage.reactions.cache.get("⬆️");
             if (previousReaction) {
               await previousReaction.users.remove(user.id);
             }
-            
+
             // Remove the user's vote from the votes array
             entry.userVotes.splice(userVoteIndex, 1);
           } catch (error) {
@@ -236,7 +237,7 @@ client.on("messageReactionAdd", async (reaction, user) => {
             // If the message doesn't exist anymore, just remove the vote from the array
             entry.userVotes.splice(userVoteIndex, 1);
           }
-          
+
           break; // Exit after finding and handling the first previous vote
         }
       }
@@ -259,7 +260,7 @@ client.on("messageReactionAdd", async (reaction, user) => {
           // If the user hasn't voted on this message, add a new vote record
           contestEntry.userVotes.push({
             userId: user.id,
-            userName : user.username,
+            userName: user.username,
             voteCount: 1, // First time vote
           });
         }
@@ -324,7 +325,7 @@ client.on("messageReactionRemove", async (reaction, user) => {
         if (userVoteIndex !== -1) {
           // Get the vote before we remove it
           const userVote = contestEntry.userVotes[userVoteIndex];
-          
+
           // Decrement the vote count if user removes the reaction
           userVote.voteCount -= 1;
 
@@ -335,7 +336,7 @@ client.on("messageReactionRemove", async (reaction, user) => {
 
           // Save the updated contest entry
           await contest.save();
-          
+
           // Update the embed
           const embedMessage = await EmbedMessages.findOne({
             itemId: contest._id,

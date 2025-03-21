@@ -149,7 +149,7 @@ async function pointsSetupAdminRole(interaction) {
       {
         label: "Cooldown (in minutes)",
         customId: "active_reward_cooldown",
-        placeholder: "Enter Cooldown Between Messages",
+        placeholder: "Minutes between messages for points",
         style: "Short",
       },
       {
