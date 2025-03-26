@@ -175,6 +175,12 @@ module.exports = {
       console.log(guild.memberCount);
       
       console.log( guild.memberCount * 2 * 0.5)
+
+      const reservedTotal =  guild.memberCount * 2
+
+      const vault =Math.floor(reservedTotal * 0.5)
+
+
       const doc = await Guilds.findOneAndUpdate(
         { guildId }, 
         {
@@ -186,8 +192,8 @@ module.exports = {
             totalMembers: guild.memberCount,
             botConfig: { channels: {} },
             analytics: {
-              reservedPoints: guild.memberCount * 2,
-              vault: guild.memberCount * 2 * 0.5,
+              reservedPoints: reservedTotal - vault,
+              vault,
             },
         },
         { new: true, upsert: true }
