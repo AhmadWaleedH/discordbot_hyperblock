@@ -375,12 +375,12 @@ async function handleJoinTweetEvent(interaction, id) {
     }
 
     // Check if the user has connected their Twitter account
-    // if (!user.socialAccounts?.twitter?.id || !user.socialAccounts?.twitter?.accessToken) {
-    //   return await interaction.reply({
-    //     content: "❌ Please connect your Twitter account before joining!",
-    //     ephemeral: true,
-    //   });
-    // }
+    if (!user.socialAccounts?.twitter?.id || !user.socialAccounts?.twitter?.accessToken) {
+      return await interaction.reply({
+        content: "❌ Please connect your Twitter account before joining!",
+        ephemeral: true,
+      });
+    }
 
     // Get the Tweet document by ID
     const tweet = await Tweet.findById(id);
@@ -407,7 +407,7 @@ async function handleJoinTweetEvent(interaction, id) {
     // Add the user to the participants array
     tweet.participants.push({
       userId: userId,
-      twitterId: "1655143546251513857",
+      twitterId: user.socialAccounts?.twitter?.id,
     });
 
     // Save the updated Tweet document
