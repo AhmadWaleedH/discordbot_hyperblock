@@ -171,27 +171,23 @@ module.exports = {
       const { guild, member } = interaction;
       const guildId = guild.id;
       const totalMembers = guild.memberCount; 
-      let doc = await Guilds.findOne({ guildId });
-      if (!doc) {
-        const reservedPoints = totalMembers * 2; // Reserved Points Calculation
-        const vault = reservedPoints * 0.5;
-        doc = new Guilds({
-          guildId,
-          guildName: guild.name,
-          guildIconURL: guild.iconURL(),
-          ownerUserId: member.id,
-          ownerUsername: member.user.username,
-          ownerAvatarURL: member.displayAvatarURL(),
-          totalMembers: guild.memberCount,
-          botConfig: {
-            channels: {},
-          },
-          analytics: {
-            reservedPoints,
-            vault,
+      const doc = await Guilds.findOneAndUpdate(
+        { guildId }, 
+        {
+            guildName: guild.name,
+            guildIconURL: guild.iconURL(),
+            ownerUserId: member.id,
+            ownerUsername: member.user.username,
+            ownerAvatarURL: member.displayAvatarURL(),
+            totalMembers: guild.memberCount,
+            botConfig: { channels: {} },
+            analytics: {
+              reservedPoints: guild.memberCount * 2,
+              vault: guild.memberCount * 2 * 0.5,
+            },
         },
-        });
-      }
+        { new: true, upsert: true }
+      );
 
       for (const channelName of channels) {
         const schemaKey = toCamelCase(channelName);
