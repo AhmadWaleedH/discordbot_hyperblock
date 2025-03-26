@@ -26,6 +26,7 @@ const Contest = require("../../models/Contests");
 const EmbedMessages = require("../../models/EmbedMessages");
 const { generateCreditCardImage } = require("../canvas/front");
 const { generateCardImage } = require("../imgutil");
+const Tweet = require("../../models/tweet");
 
 const buttonOptions = [
   {
@@ -252,15 +253,17 @@ async function handleTweetEventCreate(interaction) {
 
   const tweetURL = submitted.fields.getTextInputValue("tweet_link");
 
-  // Validate tweet link with regex
-  const tweetRegex = /https?:\/\/(www\.)?(twitter|x)\.com\/\w+\/status\/\d+/;
-  if (!tweetRegex.test(tweetURL)) {
+  const tweetRegex = /https?:\/\/(www\.)?(twitter|x)\.com\/\w+\/status\/(\d+)/;
+  const match = tweetURL.match(tweetRegex);
+
+
+  if (!match) {
     return await submitted.editReply({
       content: "Invalid tweet link. Please try again!",
       ephemeral: true,
     });
   }
-
+  const tweetId = match[3];
   const selectMenu = new StringSelectMenuBuilder()
     .setCustomId("tweet_action_select")
     .setPlaceholder("Choose an action")
@@ -282,11 +285,23 @@ async function handleTweetEventCreate(interaction) {
     .catch(() => null);
 
   if (!selection) return;
-
+  const selectedRawAction = selection.values[0];
   const selectedAction = selection.values[0]
     .split("_")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
+
+
+    const tweetData = new Tweet({
+      tweetId,
+      tweetURL,
+      action: selectedRawAction,
+      guildId: interaction.guildId,
+      timeRemaining: new Date(Date.now() + 6 * 60 * 1000),
+    });
+
+    
+    await tweetData.save();
 
   const embed = new EmbedBuilder()
     .setTitle("🚀 Social Event!")
@@ -305,7 +320,7 @@ async function handleTweetEventCreate(interaction) {
     .setFooter({ text: "Keep engaging, keep winning! 🎉" });
 
   const joinButton = new ButtonBuilder()
-    .setCustomId("join_twt")
+    .setCustomId(`join_twt_${tweetData._id.toString()}`)
     .setLabel("Join")
     .setStyle(ButtonStyle.Primary);
 
@@ -321,6 +336,20 @@ async function handleTweetEventCreate(interaction) {
       ephemeral: true,
     });
 
+   
+
+    await Guilds.updateOne(
+      { guildId: interaction.guild.id },
+      {
+        $inc: {
+          "counter.socialTasksCount": 1,
+          "counter.weeklySocialTasksCounter": 1,
+        },
+      }
+    );
+
+
+
   await channel.send({ embeds: [embed], components: [buttonRow] });
 
   await selection.update({
@@ -329,6 +358,74 @@ async function handleTweetEventCreate(interaction) {
     components: [],
     embeds: [],
   });
+}
+
+async function handleJoinTweetEvent(interaction, id) {
+  try {
+    const userId = interaction.user.id;
+
+    // Find user in the database
+    const user = await User.findOne({ discordId: userId });
+
+    if (!user) {
+      return await interaction.reply({
+        content: "User not found in the database!",
+        ephemeral: true,
+      });
+    }
+
+    // Check if the user has connected their Twitter account
+    // if (!user.socialAccounts?.twitter?.id || !user.socialAccounts?.twitter?.accessToken) {
+    //   return await interaction.reply({
+    //     content: "❌ Please connect your Twitter account before joining!",
+    //     ephemeral: true,
+    //   });
+    // }
+
+    // Get the Tweet document by ID
+    const tweet = await Tweet.findById(id);
+
+    if (!tweet) {
+      return await interaction.reply({
+        content: "❌ Tweet event not found!",
+        ephemeral: true,
+      });
+    }
+
+    // Check if the user is already in the participants list
+    const alreadyJoined = tweet.participants.some(
+      (participant) => participant.userId === userId
+    );
+
+    if (alreadyJoined) {
+      return await interaction.reply({
+        content: "✅ You have already joined this event!",
+        ephemeral: true,
+      });
+    }
+
+    // Add the user to the participants array
+    tweet.participants.push({
+      userId: userId,
+      twitterId: "1655143546251513857",
+    });
+
+    // Save the updated Tweet document
+    await tweet.save();
+
+    // Send success message
+    await interaction.reply({
+      content: "🎉 You have successfully joined the tweet event!",
+      ephemeral: true,
+    });
+
+  } catch (error) {
+    console.error("Error handling join tweet event:", error);
+    await interaction.reply({
+      content: "❌ An error occurred. Please try again later.",
+      ephemeral: true,
+    });
+  }
 }
 
 module.exports = { handleTweetEventCreate };
@@ -1131,6 +1228,13 @@ async function handleJoinContest(interaction, itemId) {
       });
     }
 
+    if (contest.participants.includes(interaction.user.id)) {
+      return interaction.reply({
+        content: "❌ You have already joined this contest!",
+        ephemeral: true,
+      });
+    }
+
     const guildId = interaction.guild.id;
     const serverMembership = user.serverMemberships.find(
       (membership) => membership.guildId === guildId
@@ -1179,6 +1283,9 @@ async function handleJoinContest(interaction, itemId) {
       await user.save();
     }
 
+    contest.participants.push(interaction.user.id);
+    await contest.save();
+    
     // Step 6: Send confirmation message to the user
     return interaction.reply({
       content: `🎉 **Congratulations!** You've successfully joined the contest **${contest.title}**!  
@@ -1262,6 +1369,7 @@ module.exports = {
   handleFunContestBtn,
   handleJoinContest,
   handleEndRaffle,
+  handleJoinTweetEvent
 };
 
 async function displayActiveAuctions(interaction, selectId) {

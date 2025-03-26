@@ -194,7 +194,7 @@ async function reactionRewardSetup(interaction) {
       {
         label: "Time (in minutes)",
         customId: "reaction_reward_cooldown",
-        placeholder: "Input for how long each reaction reward will last",
+        placeholder: "Duration for eligibility to earn announcement points",
         style: "Short",
       },
       {
@@ -734,13 +734,27 @@ applications (dApps).`,
       break;
     case "twitter_page":
       modalCustomId = `add_raffle_twitter_${id}`;
-      await showModal(interaction, "Add Twitter Page", modalCustomId, [
+      await showModal(interaction, "Add Twitter Pages", modalCustomId, [
         {
-          label: "Twitter Page",
-          customId: "twitter_page_link",
-          placeholder: "Enter twitter page of the raffle",
+          label: "Primary Twitter Page",
+          customId: "twitter_page_link_1",
+          placeholder: "Enter primary Twitter page of the raffle",
           style: "Short",
-          required: true,
+          required: true, // This one is required
+        },
+        {
+          label: "Additional Twitter Page (Optional)",
+          customId: "twitter_page_link_2",
+          placeholder: "Enter an additional Twitter page (optional)",
+          style: "Short",
+          required: false, // Optional
+        },
+        {
+          label: "Additional Twitter Page (Optional)",
+          customId: "twitter_page_link_3",
+          placeholder: "Enter another additional Twitter page (optional)",
+          style: "Short",
+          required: false, 
         },
       ]);
       break;
@@ -957,17 +971,15 @@ async function editRaffleDropdown(interaction) {
           ],
         },
         edit_twitter_page: {
-          title: "Edit Twitter Page",
+          title: "Edit Twitter Pages",
           customId: "edit_twitter_page",
-          fieldOptions: [
-            {
-              label: " Twitter Page",
-              customId: "edit_twitter_page",
-              placeholder: "Enter Twitter Page",
-              value: giveaway.partnerTwitter || "",
-              style: "Short",
-            },
-          ],
+          fieldOptions: (giveaway.partnerTwitter || []).map((twitter, index) => ({
+            label: `Twitter Page ${index + 1}`,
+            customId: `edit_twitter_page_${index}`,
+            placeholder: `Enter Twitter Page ${index + 1}`,
+            value: twitter || "",
+            style: "Short",
+          })),
         },
         edit_entries_limited: {
           title: "Edit Entries Limited",
@@ -1060,12 +1072,25 @@ async function editRaffleDropdown(interaction) {
               giveaway.save();
               await editGiveawayMessage(selectInteraction, giveaway);
               break;
+
             case "edit_twitter_page":
-              giveaway.description =
-                submittedFields.get("edit_twitter_page").value;
-              giveaway.save();
-              await editGiveawayMessage(selectInteraction, giveaway);
-              break;
+              console.log("here");
+                // Create an array to store the updated Twitter links
+                giveaway.partnerTwitter = [];
+              
+                // Iterate through the submitted fields to collect Twitter links
+                submittedFields.forEach((field, key) => {
+                  if (key.startsWith("edit_twitter_page_")) {
+                    giveaway.partnerTwitter.push(field.value.trim()); // Extract 'value' and trim spaces
+                  }
+                });
+              
+                // Save the updated giveaway data
+                await giveaway.save();
+              
+                // Update the giveaway message
+                await editGiveawayMessage(selectInteraction, giveaway);
+                break;              
             case "edit_entries_limited":
               giveaway.entriesLimited = Number(
                 submittedFields.get("edit_entries_limited").value
@@ -1450,6 +1475,43 @@ async function contestCreationSelect(interaction, id) {
     }
 
     points.push(parsedValue);
+  }
+
+
+  const guild = await Guilds.findOne({ guildId: interaction.guild.id });
+  if (!guild) {
+    return await modalSubmit.reply({
+      content: "Guild not found in the database.",
+      ephemeral: true,
+    });
+  }
+  const totalWinnerPoints = points.reduce((acc, curr) => acc + curr, 0);
+  const createdAt = new Date(guild.createdAt);
+  const now = new Date();
+  const diffInMonths = (now - createdAt) / (1000 * 60 * 60 * 24 * 30); // Approximate month calculation
+
+  if (diffInMonths < 2) {
+    const totalMembers = guild.totalMembers || 1; // Avoid division by zero
+    const amountToDeduct = Math.floor((guild.analytics.vault / totalMembers) * 2);
+    console.log(amountToDeduct)
+    if (guild.analytics.vault < amountToDeduct) {
+      return await modalSubmit.reply({
+        content: "Not enough vault points. Vault balance is too low.",
+        ephemeral: true,
+      });
+    }
+
+    // Deduct points from vault
+    guild.analytics.vault -= amountToDeduct;
+    await guild.save();
+
+
+    if (guild.analytics.vault < totalWinnerPoints) {
+    return modalSubmit.reply({
+      content: `You have less points in the vault (${guild.analytics.vault}) than declared for winners (${totalWinnerPoints}).`,
+      ephemeral: true,
+    });
+  }
   }
 
   contest.pointsForWinners = points;

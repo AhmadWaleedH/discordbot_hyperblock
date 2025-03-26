@@ -56,31 +56,50 @@ module.exports = async (client, interaction) => {
     }
 
     case customId.startsWith("add_raffle_twitter_"): {
-      const itemId = customId.split("add_raffle_twitter_")[1];
+  const itemId = customId.split("add_raffle_twitter_")[1];
 
-      const field = interaction.fields.getTextInputValue("twitter_page_link");
+  const twitterHandles = [
+    interaction.fields.getTextInputValue("twitter_page_link_1"),
+    interaction.fields.getTextInputValue("twitter_page_link_2"),
+    interaction.fields.getTextInputValue("twitter_page_link_3"),
+  ];
 
-      const match = field.match(
-        /^(?:https?:\/\/)?(?:www\.)?(?:x\.com|twitter\.com)\/@?([a-zA-Z0-9_]+)\/?$|^@?([a-zA-Z0-9_]+)$/i
-      );
+  const twitterLinks = [];
 
-      if (!match)
-        await interaction.reply({
-          content:
-            "Please enter correct format like \`http://x.com/elonMusk\` OR \`elonMusk\` (plain username)",
-          ephemeral: true,
-        });
+  for (const field of twitterHandles) {
+    if (!field) continue; // Skip empty fields
 
-      if (match) {
-        const username = match[2] || match[1] || match[0];
+    const match = field.match(
+      /^(?:https?:\/\/)?(?:www\.)?(?:x\.com|twitter\.com)\/@?([a-zA-Z0-9_]+)\/?$|^@?([a-zA-Z0-9_]+)$/i
+    );
 
-        await updateGiveaway(interaction, itemId, {
-          partnerTwitter: `https://x.com/${username}`,
-        });
-      }
-
-      break;
+    if (!match) {
+      await interaction.reply({
+        content:
+          "Please enter the correct format like `http://x.com/elonMusk` OR `elonMusk` (plain username)",
+        ephemeral: true,
+      });
+      return; // Stop execution if one is invalid
     }
+
+    const username = match[2] || match[1] || match[0];
+    twitterLinks.push(`https://x.com/${username}`);
+  }
+
+  if (twitterLinks.length === 0) {
+    await interaction.reply({
+      content: "You must enter at least one valid Twitter page.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  await updateGiveaway(interaction, itemId, {
+    partnerTwitter: twitterLinks, // Store as an array
+  });
+  
+  break;
+}
 
     case customId.startsWith("add_raffle_limit_"): {
       const itemId = customId.split("add_raffle_limit_")[1];

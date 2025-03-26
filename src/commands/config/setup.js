@@ -170,9 +170,11 @@ module.exports = {
 
       const { guild, member } = interaction;
       const guildId = guild.id;
-
+      const totalMembers = guild.memberCount; 
       let doc = await Guilds.findOne({ guildId });
       if (!doc) {
+        const reservedPoints = totalMembers * 2; // Reserved Points Calculation
+        const vault = reservedPoints * 0.5;
         doc = new Guilds({
           guildId,
           guildName: guild.name,
@@ -184,6 +186,10 @@ module.exports = {
           botConfig: {
             channels: {},
           },
+          analytics: {
+            reservedPoints,
+            vault,
+        },
         });
       }
 

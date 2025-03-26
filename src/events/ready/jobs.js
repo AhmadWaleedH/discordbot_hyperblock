@@ -3,7 +3,9 @@ const Contest = require("../../models/Contests");
 const User = require("../../models/Users");
 const Guilds = require("../../models/Guilds")
 const cron = require("node-cron");
+const Tweet = require("../../models/tweet");
 
+const axios = require('axios');
 module.exports = async (client) => {
  
   cron.schedule("* * * * *", async () => {
@@ -209,8 +211,164 @@ module.exports = async (client) => {
       console.error("Error deleting expired contest channels:", error);
     }
   });
+
+  
+
+  cron.schedule('* * * * *', async ()  => {
+    checkTweetParticipation(client);
+  });
 };
 
 
 
 
+async function checkTweetParticipation(client) {
+  try {
+    console.log("Checking for expired tweets...");
+    const now = new Date();
+    
+    // Find tweets where timeRemaining has passed
+    const expiredTweets = await Tweet.find({ timeRemaining: { $lte: now },  isExpired: false });
+    
+    if (expiredTweets.length > 0) {
+      let userPoints = {};
+      for (const tweet of expiredTweets) {
+        console.log(tweet);
+        // Prepare Twitter API request
+        const options = {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${process.env.TWITTER_BEARER_TOKEN}` }
+        };
+
+        let likingUsers = [];
+        let retweetingUsers = [];
+        console.log(tweet.action === 'like');
+        // Check liking users if action requires like
+        if (tweet.action === 'like' || tweet.action === 'like_retweet') {
+          try {
+            const likeResponse = await axios.get(
+              `https://api.twitter.com/2/tweets/${tweet.tweetId}/liking_users`, 
+              options
+            );
+            console.log(likeResponse);
+            likingUsers = likeResponse.data.data || [];
+          } catch (likeError) {
+            console.error('Error fetching liking users:', likeError);
+            continue;
+          }
+        }
+
+        // Check retweeting users if action requires retweet
+        if (tweet.action === 'retweet' || tweet.action === 'like_retweet') {
+          try {
+            const retweetResponse = await axios.get(
+              `https://api.twitter.com/2/tweets/${tweet.tweetId}/retweeted_by`, 
+              options
+            );
+            console.log(retweetResponse.data.data);
+            retweetingUsers = retweetResponse.data.data || [];
+          } catch (retweetError) {
+            console.error('Error fetching retweeting users:', retweetError);
+            continue;
+          }
+        }
+
+        // Process participants
+        for (const participant of tweet.participants) {
+          // Find the user's X (Twitter) account details
+          const user = await User.findOne({ 'discordId': participant.userId });
+          
+          if (user) {
+            // Find the specific server membership
+            const serverMembership = user.serverMemberships.find(
+              membership => membership.guildId === tweet.guildId
+            );
+
+            if (serverMembership) {
+              let pointsEarned = 0;
+
+              // Check participation based on action
+              switch (tweet.action) {
+                case 'like':
+                  if (likingUsers.some(u => u.id === participant.twitterId)) {
+                    pointsEarned = 10; // Points for liking
+                  }
+                  break;
+                
+                case 'retweet':
+                  console.log("jere");
+                  if (retweetingUsers.some(u => u.id === participant.twitterId)) {
+                    console.log("hello")
+                    pointsEarned = 10; // Points for retweeting
+                  }
+                  break;
+                
+                case 'like_retweet':
+                  const likedTweet = likingUsers.some(u => u.id === participant.twitterId);
+                  const retweetedTweet = retweetingUsers.some(u => u.id === participant.twitterId);
+                  
+                  if (likedTweet && retweetedTweet) {
+                    pointsEarned = 20; // More points for both actions
+                  }
+                  break;
+              }
+
+              // Assign points if earned
+              if (pointsEarned > 0) {
+                serverMembership.points += pointsEarned;
+                serverMembership.completedTasks += 1;
+                
+                await user.save();
+                
+                console.log(`Assigned ${pointsEarned} points to user ${user.discordUsername} for tweet participation`);
+
+                if (!userPoints[tweet.guildId]) userPoints[tweet.guildId] = [];
+                userPoints[tweet.guildId].push({
+                  username: user.discordUsername,
+                  points: serverMembership.points
+                });
+              }
+            }
+          }
+        }
+
+        // Mark tweet as processed
+        tweet.isExpired = true;
+        await tweet.save();
+      }
+
+      await sendLeaderboardEmbeds(client, userPoints);
+    } else {
+      console.log("No expired tweets found.");
+    }
+  } catch (error) {
+    console.error("Error checking tweet participation:", error);
+  }
+}
+
+
+
+async function sendLeaderboardEmbeds(client, userPoints) {
+  for (const guildId in userPoints) {
+    const guildData = await Guilds.findOne({ guildId });
+
+    if (!guildData || !guildData.botConfig?.userChannels?.leaderboard) continue;
+
+    const leaderboardChannelId = guildData.botConfig.userChannels.leaderboard;
+    const channel = await client.channels.fetch(leaderboardChannelId).catch(() => null);
+    if (!channel) continue;
+
+    // Sort users by points (highest first)
+    const sortedUsers = userPoints[guildId].sort((a, b) => b.points - a.points);
+
+    const embed = new EmbedBuilder()
+      .setTitle("🏆 Leaderboard Update")
+      .setColor("#FFD700")
+      .setDescription(
+        sortedUsers.map((user, index) => `**${index + 1}. ${user.username}** - ${user.points} points`).join("\n")
+      )
+      .setFooter({ text: "Keep participating to climb the leaderboard!" });
+
+    await channel.send({ embeds: [embed] });
+  }
+}

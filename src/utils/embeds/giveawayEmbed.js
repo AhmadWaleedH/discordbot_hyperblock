@@ -84,13 +84,13 @@ function createGiveawayEmbed(giveaway) {
     );
 
   // Add partner information if exists
-  if (giveaway.partnerTwitter) {
+  if (giveaway.partnerTwitter && giveaway.partnerTwitter.length > 0) {
     embed.addFields({
-      name: "🤝 Partner",
-      value: `[Partner](${giveaway.partnerTwitter})`,
+      name: "🤝 Partners",
+      value: giveaway.partnerTwitter.map((link, index) => `[Partner ${index + 1}](${link})`).join("\n"),
       inline: false,
     });
-  }
+  }  
 
   // Add notes if they exist
   if (giveaway.notes) {
@@ -120,7 +120,7 @@ function createGiveawayEmbed(giveaway) {
 
   const endGiveawayButton = new ButtonBuilder()
     .setCustomId(`endRaffleNow_${giveaway._id}`)
-    .setLabel(`End Raffle Now)`)
+    .setLabel(`End Raffle Now`)
     .setStyle(ButtonStyle.Danger)
     .setEmoji("📣")
     .setDisabled(giveaway.isExpired);

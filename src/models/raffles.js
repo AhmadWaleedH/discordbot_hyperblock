@@ -23,7 +23,7 @@ const giveawaySchema = new mongoose.Schema({
 
   // Optional fields
   description: String,
-  partnerTwitter: String,
+  partnerTwitter: [{ type: String }],
   winnerRole: String,
   winnerRoleName: String,
   roleRequired: String,

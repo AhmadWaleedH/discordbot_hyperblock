@@ -37,14 +37,13 @@ module.exports = async (client, interaction) => {
       case customId === "use_twt":
         await buttonActions.handleTweetEventCreate(interaction);
         break;
-      case customId === "join_twt":
-        await interaction.reply({
-          content:
-            "Please link your twitter account first at https://example.com",
-          ephemeral: true,
-        });
-        break;
 
+      case customId.startsWith("join_twt_"): {
+          const itemId = customId.split("join_twt_")[1];
+          console.log(itemId)
+          await buttonActions.handleJoinTweetEvent(interaction, itemId);
+          break;
+      }
       // setup ✅ - add/edit/delete items ⏳
 
       case customId === "add_item":

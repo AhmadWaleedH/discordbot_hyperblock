@@ -23,6 +23,7 @@ const userSchema = new Schema({
     twitter: {
       id: { type: String },
       username: { type: String },
+      accessToken : { type: String },
       profileUrl: { type: String },
     },
   },
