@@ -171,6 +171,10 @@ module.exports = {
       const { guild, member } = interaction;
       const guildId = guild.id;
       const totalMembers = guild.memberCount; 
+
+      console.log(guild.memberCount);
+      
+      console.log( guild.memberCount * 2 * 0.5)
       const doc = await Guilds.findOneAndUpdate(
         { guildId }, 
         {
